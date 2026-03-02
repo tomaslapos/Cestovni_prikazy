@@ -4,9 +4,10 @@ import { Header } from './components/layout/Header';
 import { TabNavigation } from './components/layout/TabNavigation';
 import { TripsPage } from './pages/TripsPage';
 import { VehiclesPage } from './pages/VehiclesPage';
+import { GeneratorPage } from './pages/GeneratorPage';
 import { useAuth } from './hooks/useAuth';
 
-type Tab = 'trips' | 'vehicles';
+type Tab = 'trips' | 'vehicles' | 'generator';
 
 function App() {
   const { user, loading, error, login, logout, isAuthenticated } = useAuth();
@@ -32,6 +33,7 @@ function App() {
       <main>
         {activeTab === 'trips' && <TripsPage />}
         {activeTab === 'vehicles' && <VehiclesPage />}
+        {activeTab === 'generator' && <GeneratorPage />}
       </main>
     </div>
   );

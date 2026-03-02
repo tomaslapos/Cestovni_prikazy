@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { Plus } from 'lucide-react';
 import { VehicleList } from '../components/vehicles/VehicleList';
 import { VehicleDetail } from '../components/vehicles/VehicleDetail';
 import { TripDetail } from '../components/trips/TripDetail';
@@ -6,6 +7,7 @@ import { TripForm } from '../components/trips/TripForm';
 import { useVehicles } from '../hooks/useVehicles';
 import { useTrips } from '../hooks/useTrips';
 import { useDistances } from '../hooks/useDistances';
+import { VehicleForm } from '../components/vehicles/VehicleForm';
 import { Vehicle, Trip, TripFormData, VehicleFormData } from '../types';
 
 export function VehiclesPage() {
@@ -14,7 +16,8 @@ export function VehiclesPage() {
   const [showTripForm, setShowTripForm] = useState(false);
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
 
-  const { vehicles, loading, updateVehicle, getVehicleById, updateVehicleKm } = useVehicles();
+  const { vehicles, loading, updateVehicle, getVehicleById, updateVehicleKm, createVehicle } = useVehicles();
+  const [showVehicleForm, setShowVehicleForm] = useState(false);
   const { 
     trips: vehicleTrips, 
     loading: tripsLoading, 
@@ -98,9 +101,18 @@ export function VehiclesPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div className="mb-6">
-        <h2 className="font-display text-2xl font-bold text-white mb-2">Vozidla</h2>
-        <p className="text-slate-400">Správa vozového parku</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="font-display text-2xl font-bold text-white mb-2">Vozidla</h2>
+          <p className="text-slate-400">Správa vozového parku</p>
+        </div>
+        <button
+          onClick={() => setShowVehicleForm(true)}
+          className="flex items-center gap-2 bg-gradient-to-r from-primary-500 to-accent-500 text-white px-5 py-2.5 rounded-xl font-medium hover:shadow-lg hover:shadow-primary-500/25 transition-all"
+        >
+          <Plus className="w-4 h-4" />
+          Přidat vozidlo
+        </button>
       </div>
 
       <VehicleList
@@ -126,6 +138,17 @@ export function VehiclesPage() {
           onClose={() => setSelectedTrip(null)}
           onEdit={handleEditTrip}
           onDelete={handleDeleteTrip}
+        />
+      )}
+
+      {showVehicleForm && (
+        <VehicleForm
+          onSubmit={async (data) => {
+            const success = await createVehicle(data as VehicleFormData);
+            if (success) setShowVehicleForm(false);
+            return success;
+          }}
+          onClose={() => setShowVehicleForm(false)}
         />
       )}
 

@@ -1,6 +1,6 @@
-import { MapPin, Car } from 'lucide-react';
+import { MapPin, Car, Zap } from 'lucide-react';
 
-type Tab = 'trips' | 'vehicles';
+type Tab = 'trips' | 'vehicles' | 'generator';
 
 interface TabNavigationProps {
   activeTab: Tab;
@@ -11,6 +11,7 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
   const tabs = [
     { id: 'trips' as Tab, label: 'Cesty', icon: MapPin },
     { id: 'vehicles' as Tab, label: 'Vozidla', icon: Car },
+    { id: 'generator' as Tab, label: 'Generátor', icon: Zap },
   ];
 
   return (

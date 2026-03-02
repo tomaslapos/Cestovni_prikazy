@@ -76,6 +76,24 @@ export function useVehicles() {
     }
   }, [fetchVehicles]);
 
+  const createVehicle = useCallback(async (data: VehicleFormData) => {
+    try {
+      const { error } = await supabase
+        .from('vehicles')
+        .insert({
+          ...data,
+          current_km: data.initial_km,
+        });
+
+      if (error) throw error;
+      await fetchVehicles();
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Chyba při vytváření vozidla');
+      return false;
+    }
+  }, [fetchVehicles]);
+
   return {
     vehicles,
     loading,
@@ -85,5 +103,6 @@ export function useVehicles() {
     getVehicleById,
     updateVehicle,
     updateVehicleKm,
+    createVehicle,
   };
 }

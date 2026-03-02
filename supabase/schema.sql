@@ -80,6 +80,9 @@ CREATE POLICY "Allow public insert trips" ON trips FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update trips" ON trips FOR UPDATE USING (true);
 CREATE POLICY "Allow public delete trips" ON trips FOR DELETE USING (true);
 
--- Insert default user
+-- Insert default users
 INSERT INTO users (username, password_hash) VALUES ('lapos.tomas@gastrotechnogroup.cz', 'g@stro2026')
+ON CONFLICT (username) DO NOTHING;
+
+INSERT INTO users (username, password_hash) VALUES ('tyna.vyravova', 'g@stro2026')
 ON CONFLICT (username) DO NOTHING;

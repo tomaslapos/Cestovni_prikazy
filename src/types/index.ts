@@ -71,3 +71,16 @@ export interface TripFilters {
 }
 
 export type ViewMode = 'calendar' | 'list';
+
+export interface GeneratorRequest {
+  id: string;
+  vehicle_id: string;
+  date_from: string;
+  date_to: string;
+  total_km: number;
+  generated_km: number;
+  status: 'pending' | 'completed';
+  created_at: string;
+  // Joined data
+  vehicle?: Vehicle;
+}

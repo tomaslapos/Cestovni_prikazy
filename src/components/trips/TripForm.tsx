@@ -23,11 +23,12 @@ export function TripForm({
   getDistance,
   getVehicleCurrentKm,
 }: TripFormProps) {
+  const today = new Date().toISOString().slice(0, 10);
   const [formData, setFormData] = useState<TripFormData>({
     vehicle_id: trip?.vehicle_id || '',
     driver_name: trip?.driver_name || '',
-    start_date: trip?.start_date ? trip.start_date.slice(0, 10) : '',
-    end_date: trip?.end_date ? trip.end_date.slice(0, 10) : '',
+    start_date: trip?.start_date ? trip.start_date.slice(0, 16) : `${today}T08:15`,
+    end_date: trip?.end_date ? trip.end_date.slice(0, 16) : `${today}T11:00`,
     purpose: trip?.purpose || 'služební',
     start_location: trip?.start_location || 'Ústí nad Labem',
     end_location: trip?.end_location || '',
@@ -43,7 +44,7 @@ export function TripForm({
   // Filter active vehicles based on start date
   useEffect(() => {
     if (formData.start_date) {
-      const checkDate = new Date(formData.start_date);
+      const checkDate = new Date(formData.start_date.slice(0, 10));
       const filtered = vehicles.filter((vehicle) => {
         const acquisitionDate = new Date(vehicle.acquisition_date);
         const disposalDate = vehicle.disposal_date ? new Date(vehicle.disposal_date) : null;
@@ -126,9 +127,17 @@ export function TripForm({
                 Datum začátku
               </label>
               <input
-                type="date"
-                value={formData.start_date.slice(0, 10)}
-                onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                type="datetime-local"
+                value={formData.start_date}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    start_date: val,
+                    // Auto-fill end_date with same date + 11:00 if not yet set
+                    ...(val && !prev.end_date ? { end_date: val.slice(0, 10) + 'T11:00' } : {}),
+                  }));
+                }}
                 className="w-full bg-slate-800/50 border border-slate-600 rounded-xl py-2.5 px-3 text-white focus:border-primary-500"
                 required
               />
@@ -139,8 +148,8 @@ export function TripForm({
                 Datum konce
               </label>
               <input
-                type="date"
-                value={formData.end_date.slice(0, 10)}
+                type="datetime-local"
+                value={formData.end_date}
                 onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
                 className="w-full bg-slate-800/50 border border-slate-600 rounded-xl py-2.5 px-3 text-white focus:border-primary-500"
                 required

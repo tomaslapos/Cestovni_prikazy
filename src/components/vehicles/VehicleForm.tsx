@@ -3,21 +3,23 @@ import { X, Car, User, Building, Calendar, Gauge, CreditCard } from 'lucide-reac
 import { Vehicle, VehicleFormData } from '../../types';
 
 interface VehicleFormProps {
-  vehicle: Vehicle;
+  vehicle?: Vehicle;
   onSubmit: (data: Partial<VehicleFormData>) => Promise<boolean>;
   onClose: () => void;
 }
 
 export function VehicleForm({ vehicle, onSubmit, onClose }: VehicleFormProps) {
+  const isNew = !vehicle;
+  const today = new Date().toISOString().slice(0, 10);
   const [formData, setFormData] = useState<VehicleFormData>({
-    name: vehicle.name,
-    spz: vehicle.spz,
-    ownership: vehicle.ownership,
-    department: vehicle.department,
-    driver_name: vehicle.driver_name,
-    acquisition_date: vehicle.acquisition_date,
-    disposal_date: vehicle.disposal_date,
-    initial_km: vehicle.initial_km,
+    name: vehicle?.name || '',
+    spz: vehicle?.spz || '',
+    ownership: vehicle?.ownership || 'vlastní',
+    department: vehicle?.department || '',
+    driver_name: vehicle?.driver_name || '',
+    acquisition_date: vehicle?.acquisition_date || today,
+    disposal_date: vehicle?.disposal_date || null,
+    initial_km: vehicle?.initial_km || 0,
   });
 
   const [loading, setLoading] = useState(false);
@@ -42,7 +44,7 @@ export function VehicleForm({ vehicle, onSubmit, onClose }: VehicleFormProps) {
         {/* Header */}
         <div className="bg-gradient-to-r from-primary-600 to-accent-600 p-6 sticky top-0">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-xl font-bold text-white">Upravit vozidlo</h2>
+            <h2 className="font-display text-xl font-bold text-white">{isNew ? 'Nové vozidlo' : 'Upravit vozidlo'}</h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-white/20 rounded-lg transition-colors"
@@ -194,7 +196,7 @@ export function VehicleForm({ vehicle, onSubmit, onClose }: VehicleFormProps) {
               disabled={loading}
               className="flex-1 px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 rounded-xl shadow-lg shadow-primary-500/25 transition-all disabled:opacity-50"
             >
-              {loading ? 'Ukládání...' : 'Uložit změny'}
+              {loading ? 'Ukládání...' : isNew ? 'Vytvořit vozidlo' : 'Uložit změny'}
             </button>
           </div>
         </form>

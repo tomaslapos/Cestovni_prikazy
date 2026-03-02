@@ -58,6 +58,18 @@ CREATE TABLE IF NOT EXISTS distances (
     UNIQUE(start_city, end_city)
 );
 
+-- Generator requests table
+CREATE TABLE IF NOT EXISTS generator_requests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+    date_from DATE NOT NULL,
+    date_to DATE NOT NULL,
+    total_km INTEGER NOT NULL,
+    generated_km INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'completed',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- =============================================================================
 -- INDEXY
 -- =============================================================================
@@ -67,6 +79,8 @@ CREATE INDEX IF NOT EXISTS idx_trips_start_date ON trips(start_date);
 CREATE INDEX IF NOT EXISTS idx_trips_driver_name ON trips(driver_name);
 CREATE INDEX IF NOT EXISTS idx_vehicles_spz ON vehicles(spz);
 CREATE INDEX IF NOT EXISTS idx_distances_cities ON distances(start_city, end_city);
+CREATE INDEX IF NOT EXISTS idx_generator_requests_vehicle_id ON generator_requests(vehicle_id);
+CREATE INDEX IF NOT EXISTS idx_generator_requests_date_to ON generator_requests(date_to);
 
 -- =============================================================================
 -- ROW LEVEL SECURITY
@@ -76,6 +90,7 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vehicles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trips ENABLE ROW LEVEL SECURITY;
 ALTER TABLE distances ENABLE ROW LEVEL SECURITY;
+ALTER TABLE generator_requests ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Allow public read users" ON users;
@@ -86,6 +101,8 @@ DROP POLICY IF EXISTS "Allow public insert vehicles" ON vehicles;
 DROP POLICY IF EXISTS "Allow public update vehicles" ON vehicles;
 DROP POLICY IF EXISTS "Allow public delete vehicles" ON vehicles;
 DROP POLICY IF EXISTS "Allow public insert trips" ON trips;
+DROP POLICY IF EXISTS "Allow public read generator_requests" ON generator_requests;
+DROP POLICY IF EXISTS "Allow public insert generator_requests" ON generator_requests;
 DROP POLICY IF EXISTS "Allow public update trips" ON trips;
 DROP POLICY IF EXISTS "Allow public delete trips" ON trips;
 
@@ -103,11 +120,17 @@ CREATE POLICY "Allow public insert trips" ON trips FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update trips" ON trips FOR UPDATE USING (true);
 CREATE POLICY "Allow public delete trips" ON trips FOR DELETE USING (true);
 
+CREATE POLICY "Allow public read generator_requests" ON generator_requests FOR SELECT USING (true);
+CREATE POLICY "Allow public insert generator_requests" ON generator_requests FOR INSERT WITH CHECK (true);
+
 -- =============================================================================
--- UŽIVATEL
+-- UŽIVATELÉ
 -- =============================================================================
 
 INSERT INTO users (username, password_hash) VALUES ('lapos.tomas@gastrotechnogroup.cz', 'g@stro2026')
+ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash;
+
+INSERT INTO users (username, password_hash) VALUES ('tyna.vyravova', 'g@stro2026')
 ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash;
 
 -- =============================================================================
