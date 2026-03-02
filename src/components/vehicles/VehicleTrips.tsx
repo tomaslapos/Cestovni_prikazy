@@ -14,18 +14,20 @@ export function VehicleTrips({ trips, loading, onTripClick }: VehicleTripsProps)
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState<string>('');
 
-  const filteredTrips = trips.filter((trip) => {
-    const matchesSearch =
-      trip.start_location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trip.end_location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trip.driver_name.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredTrips = trips
+    .filter((trip) => {
+      const matchesSearch =
+        trip.start_location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trip.end_location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trip.driver_name.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesMonth = filterMonth
-      ? format(new Date(trip.start_date), 'yyyy-MM') === filterMonth
-      : true;
+      const matchesMonth = filterMonth
+        ? format(new Date(trip.start_date), 'yyyy-MM') === filterMonth
+        : true;
 
-    return matchesSearch && matchesMonth;
-  });
+      return matchesSearch && matchesMonth;
+    })
+    .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
 
   if (loading) {
     return (
@@ -74,7 +76,7 @@ export function VehicleTrips({ trips, loading, onTripClick }: VehicleTripsProps)
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <div className="flex items-center gap-2 text-primary-400 text-sm min-w-[100px]">
                   <Calendar className="w-3 h-3" />
-                  {format(new Date(trip.start_date), 'd. M. yyyy', { locale: cs })}
+                  {format(new Date(trip.start_date), 'd. M. yyyy H:mm', { locale: cs })}
                 </div>
 
                 <div className="flex-1 flex items-center gap-2 text-sm">
