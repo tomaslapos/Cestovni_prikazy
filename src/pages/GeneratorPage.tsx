@@ -13,7 +13,7 @@ interface NewRequest {
   vehicleId: string;
   dateFrom: string;
   dateTo: string;
-  totalKm: string;
+  targetOdometer: string;
 }
 
 export function GeneratorPage() {
@@ -26,7 +26,7 @@ export function GeneratorPage() {
     vehicleId: '',
     dateFrom: '',
     dateTo: format(new Date(), 'yyyy-MM-dd'),
-    totalKm: '',
+    targetOdometer: '',
   });
   const [showConfirm, setShowConfirm] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -72,21 +72,39 @@ export function GeneratorPage() {
       vehicleId: '',
       dateFrom: '',
       dateTo: format(new Date(), 'yyyy-MM-dd'),
-      totalKm: '',
+      targetOdometer: '',
     });
     setShowConfirm(false);
     setGenerationError(null);
   }, []);
 
+  const selectedVehicle = vehicles.find((v) => v.id === newRequest.vehicleId);
+
+  // Vypočítej najeté km z tachometru
+  const calculatedKm = selectedVehicle && newRequest.targetOdometer
+    ? parseInt(newRequest.targetOdometer, 10) - selectedVehicle.current_km
+    : 0;
+
   const handlePrepare = useCallback(() => {
-    if (!newRequest.vehicleId || !newRequest.dateFrom || !newRequest.dateTo || !newRequest.totalKm) {
+    if (!newRequest.vehicleId || !newRequest.dateFrom || !newRequest.dateTo || !newRequest.targetOdometer) {
       setGenerationError('Vyplňte všechna pole');
       return;
     }
     
-    const km = parseInt(newRequest.totalKm, 10);
-    if (isNaN(km) || km <= 0) {
-      setGenerationError('Zadejte platný počet kilometrů');
+    const odometer = parseInt(newRequest.targetOdometer, 10);
+    if (isNaN(odometer) || odometer <= 0) {
+      setGenerationError('Zadejte platný stav tachometru');
+      return;
+    }
+
+    const vehicle = vehicles.find((v) => v.id === newRequest.vehicleId);
+    if (!vehicle) {
+      setGenerationError('Vozidlo nenalezeno');
+      return;
+    }
+
+    if (odometer <= vehicle.current_km) {
+      setGenerationError(`Stav tachometru musí být vyšší než aktuální stav vozidla (${vehicle.current_km.toLocaleString('cs-CZ')} km)`);
       return;
     }
 
@@ -97,7 +115,7 @@ export function GeneratorPage() {
 
     setGenerationError(null);
     setShowConfirm(true);
-  }, [newRequest]);
+  }, [newRequest, vehicles]);
 
   const handleGenerate = useCallback(async () => {
     setGenerating(true);
@@ -107,7 +125,7 @@ export function GeneratorPage() {
       const vehicle = vehicles.find((v) => v.id === newRequest.vehicleId);
       if (!vehicle) throw new Error('Vozidlo nenalezeno');
 
-      const targetKm = parseInt(newRequest.totalKm, 10);
+      const targetKm = parseInt(newRequest.targetOdometer, 10) - vehicle.current_km;
       const dateFrom = new Date(newRequest.dateFrom);
       const dateTo = new Date(newRequest.dateTo);
 
@@ -164,7 +182,7 @@ export function GeneratorPage() {
         vehicleId: '',
         dateFrom: '',
         dateTo: format(new Date(), 'yyyy-MM-dd'),
-        totalKm: '',
+        targetOdometer: '',
       });
 
       await fetchRequests();
@@ -174,8 +192,6 @@ export function GeneratorPage() {
       setGenerating(false);
     }
   }, [newRequest, vehicles, distances, updateVehicleKm, createRequest, fetchRequests]);
-
-  const selectedVehicle = vehicles.find((v) => v.id === newRequest.vehicleId);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -254,28 +270,31 @@ export function GeneratorPage() {
               />
             </div>
 
-            {/* Total km */}
+            {/* Target odometer */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-slate-300">
                 <Gauge className="w-4 h-4 inline mr-1" />
-                Najeté km za období
+                Stav tachometru k datu do
               </label>
               <input
                 type="number"
-                value={newRequest.totalKm}
-                onChange={(e) => setNewRequest((prev) => ({ ...prev, totalKm: e.target.value }))}
-                placeholder="např. 1500"
+                value={newRequest.targetOdometer}
+                onChange={(e) => setNewRequest((prev) => ({ ...prev, targetOdometer: e.target.value }))}
+                placeholder={selectedVehicle ? `nyní ${selectedVehicle.current_km.toLocaleString('cs-CZ')} km` : 'např. 48000'}
                 min="1"
                 className="w-full bg-slate-800/50 border border-slate-600 rounded-xl py-3 px-4 text-white placeholder-slate-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
               />
+              {selectedVehicle && newRequest.targetOdometer && calculatedKm > 0 && (
+                <p className="text-xs text-accent-400">Najeté km: {calculatedKm.toLocaleString('cs-CZ')} km</p>
+              )}
             </div>
           </div>
 
           {/* Summary before confirm */}
-          {selectedVehicle && newRequest.dateFrom && newRequest.dateTo && newRequest.totalKm && (
+          {selectedVehicle && newRequest.dateFrom && newRequest.dateTo && newRequest.targetOdometer && calculatedKm > 0 && (
             <div className="bg-slate-800/30 rounded-lg p-4 mb-4 border border-slate-700/50">
               <h4 className="text-sm font-medium text-slate-300 mb-2">Shrnutí požadavku:</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
                 <div>
                   <span className="text-slate-500">Vozidlo:</span>
                   <p className="text-white font-medium">{getVehicleLabel(selectedVehicle)}</p>
@@ -287,12 +306,16 @@ export function GeneratorPage() {
                   </p>
                 </div>
                 <div>
-                  <span className="text-slate-500">Cílový nájezd:</span>
-                  <p className="text-white font-medium">{parseInt(newRequest.totalKm).toLocaleString('cs-CZ')} km</p>
-                </div>
-                <div>
                   <span className="text-slate-500">Aktuální stav km:</span>
                   <p className="text-white font-medium">{selectedVehicle.current_km.toLocaleString('cs-CZ')} km</p>
+                </div>
+                <div>
+                  <span className="text-slate-500">Cílový tachometr:</span>
+                  <p className="text-white font-medium">{parseInt(newRequest.targetOdometer).toLocaleString('cs-CZ')} km</p>
+                </div>
+                <div>
+                  <span className="text-slate-500">Najeté km:</span>
+                  <p className="text-accent-400 font-bold">{calculatedKm.toLocaleString('cs-CZ')} km</p>
                 </div>
               </div>
             </div>
