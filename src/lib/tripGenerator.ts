@@ -110,6 +110,13 @@ function generateRandomTime(baseHour: number, baseMinute: number, varianceMinute
   return { hour, minute };
 }
 
+// Přidá -5% až +15% k navigačnímu času jízdy (zdržení na cestě, provoz, zastávky)
+// Reálně je cesta téměř vždy delší než navigace, jen výjimečně kratší
+function addTravelTimeBuffer(baseMinutes: number): number {
+  const bufferPercent = -0.05 + Math.random() * 0.20; // -5% to +15%
+  return Math.round(baseMinutes * (1 + bufferPercent));
+}
+
 export interface GeneratedTrip {
   vehicle_id: string;
   driver_name: string;
@@ -128,6 +135,80 @@ export interface GenerationResult {
   totalGeneratedKm: number;
 }
 
+function createTripPair(
+  vehicleId: string,
+  driverName: string,
+  day: Date,
+  destination: Distance,
+): GeneratedTrip[] {
+  const oneWayKm = destination.distance_km;
+  const baseTravelMin = destination.travel_time_min;
+  
+  // Čas jízdy tam s 5-15% navýšením
+  const travelMinThere = addTravelTimeBuffer(baseTravelMin);
+  // Čas jízdy zpět s 5-15% navýšením (nezávisle)
+  const travelMinBack = addTravelTimeBuffer(baseTravelMin);
+
+  // Odjezd ráno (7:30-9:30)
+  const departure = generateRandomTime(8, 30, 60);
+  const depMinutes = departure.hour * 60 + departure.minute;
+  
+  // Příjezd do cíle
+  const arrMinutes = depMinutes + travelMinThere;
+  const arrHour = Math.min(18, Math.floor(arrMinutes / 60));
+  const arrMin = arrMinutes % 60;
+
+  // Pauza v cíli: 1-3 hodiny
+  const breakMin = 60 + Math.floor(Math.random() * 120);
+  
+  // Odjezd zpět
+  const retDepMinutes = arrMinutes + breakMin;
+  const retDepHour = Math.min(19, Math.floor(retDepMinutes / 60));
+  const retDepMin = retDepMinutes % 60;
+  
+  // Příjezd zpět
+  const retArrMinutes = retDepMinutes + travelMinBack;
+  const retArrHour = Math.min(22, Math.floor(retArrMinutes / 60));
+  const retArrMin = Math.min(59, retArrMinutes % 60);
+
+  const startDate1 = new Date(day);
+  startDate1.setHours(departure.hour, departure.minute, 0, 0);
+  const endDate1 = new Date(day);
+  endDate1.setHours(arrHour, arrMin, 0, 0);
+
+  const startDate2 = new Date(day);
+  startDate2.setHours(retDepHour, retDepMin, 0, 0);
+  const endDate2 = new Date(day);
+  endDate2.setHours(retArrHour, retArrMin, 0, 0);
+
+  return [
+    {
+      vehicle_id: vehicleId,
+      driver_name: driverName,
+      start_date: startDate1.toISOString(),
+      end_date: endDate1.toISOString(),
+      purpose: 'služební',
+      start_location: 'Ústí nad Labem',
+      end_location: destination.end_city,
+      start_km: 0, // bude přepočítáno
+      end_km: oneWayKm,
+      distance: oneWayKm,
+    },
+    {
+      vehicle_id: vehicleId,
+      driver_name: driverName,
+      start_date: startDate2.toISOString(),
+      end_date: endDate2.toISOString(),
+      purpose: 'služební',
+      start_location: destination.end_city,
+      end_location: 'Ústí nad Labem',
+      start_km: 0,
+      end_km: oneWayKm,
+      distance: oneWayKm,
+    },
+  ];
+}
+
 export function generateTrips(
   vehicleId: string,
   driverName: string,
@@ -143,198 +224,132 @@ export function generateTrips(
     return { trips: [], totalGeneratedKm: 0 };
   }
 
-  // Filter distances from Ústí nad Labem that make sense (not too far for a day trip)
-  const availableDestinations = distances.filter(
-    (d) => d.start_city === 'Ústí nad Labem' && d.distance_km >= 5 && d.distance_km <= 200
+  // Destinace z Ústí nad Labem - krátké/střední (do 150 km jednosměrně)
+  const shortDestinations = distances.filter(
+    (d) => d.start_city === 'Ústí nad Labem' && d.distance_km >= 15 && d.distance_km <= 150
+  );
+  // Praha specificky pro povinné cesty každých ~500 km
+  const pragueTrip = distances.find(
+    (d) => d.start_city === 'Ústí nad Labem' && d.end_city === 'Praha'
   );
 
-  if (availableDestinations.length === 0) {
+  if (shortDestinations.length === 0) {
     return { trips: [], totalGeneratedKm: 0 };
   }
 
-  // Target is total km for the period - each trip is a round trip (there + back = 2x distance)
   const targetTotalKm = targetKm;
-  
-  // Strategy: pick random workdays and random destinations, trying to match target km
-  // Each "trip" creates 2 records: there and back
   const trips: GeneratedTrip[] = [];
   let totalKm = 0;
-  let runningKm = currentVehicleKm;
 
-  // Determine how many trip days we need (rough estimate)
-  // Average round trip ~80-120km, so estimate days needed
-  const avgRoundTrip = 100;
-  const estimatedDays = Math.max(1, Math.ceil(targetTotalKm / avgRoundTrip));
+  // Strategie: cesty ne každý den, spíše ob den nebo ob dva dny
+  // Delší cesty (Praha) každých ~500 km
+  // Rozestup: průměrně ob 2-3 dny
+
+  // Spočítej kolik "Praha" cest potřebujeme (každých ~500 km)
+  const pragueRoundTrip = pragueTrip ? pragueTrip.distance_km * 2 : 186;
+  const pragueTripsCount = Math.max(0, Math.floor(targetTotalKm / 500));
   
-  // Pick random workdays (up to estimated days, but not more than available)
-  const tripDaysCount = Math.min(estimatedDays, workdays.length);
+  // Zbývající km po pražských cestách
+  const kmFromPrague = pragueTripsCount * pragueRoundTrip;
+  const remainingKm = targetTotalKm - kmFromPrague;
   
-  // Shuffle workdays and pick first N
-  const shuffledWorkdays = [...workdays].sort(() => Math.random() - 0.5);
-  const selectedDays = shuffledWorkdays.slice(0, tripDaysCount).sort((a, b) => a.getTime() - b.getTime());
+  // Průměrná kratší cesta tam a zpět ~60-120 km
+  const avgShortRoundTrip = 90;
+  const shortTripsNeeded = Math.max(0, Math.ceil(remainingKm / avgShortRoundTrip));
+  
+  const totalTripsNeeded = pragueTripsCount + shortTripsNeeded;
 
-  // Distribute km across selected days
-  // First pass: assign trips to get close to target
-  for (let i = 0; i < selectedDays.length; i++) {
-    const remaining = targetTotalKm - totalKm;
-    if (remaining <= 0) break;
-
-    const daysLeft = selectedDays.length - i;
-    const targetForDay = remaining / daysLeft;
-
-    // Find a destination where round trip is close to targetForDay
-    // Round trip = 2 * one-way distance
-    const targetOneWay = targetForDay / 2;
-
-    // Sort destinations by how close their distance is to target
-    const sorted = [...availableDestinations].sort(
-      (a, b) => Math.abs(a.distance_km - targetOneWay) - Math.abs(b.distance_km - targetOneWay)
-    );
-
-    // Pick from top 5 closest to add variety
-    const candidates = sorted.slice(0, Math.min(5, sorted.length));
-    const chosen = candidates[randomBetween(0, candidates.length - 1)];
-    const oneWayKm = chosen.distance_km;
-    const roundTripKm = oneWayKm * 2;
-
-    const day = selectedDays[i];
-
-    // Generate departure time (roughly 7:30-9:30)
-    const departure = generateRandomTime(8, 30, 60);
-    // Generate arrival at destination (departure + travel time estimate)
-    const travelHours = Math.max(0.5, oneWayKm / 80); // ~80 km/h average
-    const arrivalMinutes = departure.hour * 60 + departure.minute + Math.round(travelHours * 60) + randomBetween(10, 40);
-    const arrivalHour = Math.min(12, Math.floor(arrivalMinutes / 60));
-    const arrivalMin = arrivalMinutes % 60;
-
-    // Return trip starts in afternoon (13:00-16:00)
-    const returnDeparture = generateRandomTime(14, 0, 60);
-    const returnArrivalMinutes = returnDeparture.hour * 60 + returnDeparture.minute + Math.round(travelHours * 60) + randomBetween(10, 40);
-    const returnArrivalHour = Math.min(20, Math.floor(returnArrivalMinutes / 60));
-    const returnArrivalMin = Math.min(59, returnArrivalMinutes % 60);
-
-    // Trip 1: Ústí nad Labem -> Destination
-    const startDate1 = new Date(day);
-    startDate1.setHours(departure.hour, departure.minute, 0, 0);
-    
-    const endDate1 = new Date(day);
-    endDate1.setHours(arrivalHour, arrivalMin, 0, 0);
-
-    trips.push({
-      vehicle_id: vehicleId,
-      driver_name: driverName,
-      start_date: startDate1.toISOString(),
-      end_date: endDate1.toISOString(),
-      purpose: 'služební',
-      start_location: 'Ústí nad Labem',
-      end_location: chosen.end_city,
-      start_km: runningKm,
-      end_km: runningKm + oneWayKm,
-      distance: oneWayKm,
-    });
-
-    runningKm += oneWayKm;
-
-    // Trip 2: Destination -> Ústí nad Labem
-    const startDate2 = new Date(day);
-    startDate2.setHours(returnDeparture.hour, returnDeparture.minute, 0, 0);
-    
-    const endDate2 = new Date(day);
-    endDate2.setHours(returnArrivalHour, returnArrivalMin, 0, 0);
-
-    trips.push({
-      vehicle_id: vehicleId,
-      driver_name: driverName,
-      start_date: startDate2.toISOString(),
-      end_date: endDate2.toISOString(),
-      purpose: 'služební',
-      start_location: chosen.end_city,
-      end_location: 'Ústí nad Labem',
-      start_km: runningKm,
-      end_km: runningKm + oneWayKm,
-      distance: oneWayKm,
-    });
-
-    runningKm += oneWayKm;
-    totalKm += roundTripKm;
+  // Vyber pracovní dny s rozestupy (ob 2-3 dny)
+  const selectedDays: Date[] = [];
+  let dayIndex = 0;
+  while (selectedDays.length < totalTripsNeeded && dayIndex < workdays.length) {
+    selectedDays.push(workdays[dayIndex]);
+    // Přeskoč 1-3 pracovní dny (= cesty ob den až ob tři dny)
+    const skip = randomBetween(1, 3);
+    dayIndex += 1 + skip;
   }
 
-  // Fine-tuning: if we're too far off, add or adjust trips
-  const deviation = Math.abs(totalKm - targetTotalKm) / targetTotalKm;
-  
-  if (deviation > 0.03 && totalKm < targetTotalKm) {
-    // Need more km - add extra trips on unused workdays
+  // Pokud nemáme dost dní, doplň zbývající pracovní dny
+  if (selectedDays.length < totalTripsNeeded) {
+    const usedSet = new Set(selectedDays.map((d) => formatDate(d)));
+    for (const wd of workdays) {
+      if (selectedDays.length >= totalTripsNeeded) break;
+      if (!usedSet.has(formatDate(wd))) {
+        selectedDays.push(wd);
+        usedSet.add(formatDate(wd));
+      }
+    }
+    selectedDays.sort((a, b) => a.getTime() - b.getTime());
+  }
+
+  // Rozvrh: rovnoměrně rozlož pražské cesty
+  const pragueIndices = new Set<number>();
+  if (pragueTripsCount > 0 && selectedDays.length > 0) {
+    const spacing = Math.floor(selectedDays.length / (pragueTripsCount + 1));
+    for (let p = 0; p < pragueTripsCount; p++) {
+      const idx = Math.min(spacing * (p + 1), selectedDays.length - 1);
+      pragueIndices.add(idx);
+    }
+  }
+
+  // Generuj cesty
+  for (let i = 0; i < selectedDays.length; i++) {
+    const remaining = targetTotalKm - totalKm;
+    if (remaining <= 5) break;
+
+    const day = selectedDays[i];
+    let chosen: Distance;
+
+    if (pragueIndices.has(i) && pragueTrip) {
+      // Pražská cesta
+      chosen = pragueTrip;
+    } else {
+      // Vyber kratší destinaci podle zbývajících km
+      const daysLeft = selectedDays.length - i - pragueIndices.size + [...pragueIndices].filter((pi) => pi <= i).length;
+      const remainingForShort = remaining - ([...pragueIndices].filter((pi) => pi > i).length * pragueRoundTrip);
+      const targetOneWay = Math.max(15, (remainingForShort > 0 ? remainingForShort : remaining) / Math.max(1, daysLeft) / 2);
+
+      // Seřaď podle blízkosti k cílovým km
+      const sorted = [...shortDestinations].sort(
+        (a, b) => Math.abs(a.distance_km - targetOneWay) - Math.abs(b.distance_km - targetOneWay)
+      );
+
+      // Vyber z top 5 kandidátů pro pestrost
+      const candidates = sorted.slice(0, Math.min(5, sorted.length));
+      chosen = candidates[randomBetween(0, candidates.length - 1)];
+    }
+
+    const tripPair = createTripPair(vehicleId, driverName, day, chosen);
+    trips.push(...tripPair);
+    totalKm += chosen.distance_km * 2;
+  }
+
+  // Doladění: pokud jsme daleko od cíle, přidej cesty na nevyužité dny
+  if (totalKm < targetTotalKm * 0.97) {
     const usedDays = new Set(selectedDays.map((d) => formatDate(d)));
     const unusedWorkdays = workdays.filter((d) => !usedDays.has(formatDate(d)));
     
     for (const day of unusedWorkdays) {
       const remaining = targetTotalKm - totalKm;
       if (remaining <= 5) break;
-      if (Math.abs(totalKm - targetTotalKm) / targetTotalKm <= 0.03) break;
+      if (totalKm >= targetTotalKm * 0.97) break;
 
-      const targetOneWay = remaining / 2;
-      const sorted = [...availableDestinations].sort(
+      const targetOneWay = Math.max(15, remaining / 2);
+      const sorted = [...shortDestinations].sort(
         (a, b) => Math.abs(a.distance_km - targetOneWay) - Math.abs(b.distance_km - targetOneWay)
       );
       const chosen = sorted[0];
-      const oneWayKm = chosen.distance_km;
-      const travelHours = Math.max(0.5, oneWayKm / 80);
 
-      const departure = generateRandomTime(8, 30, 60);
-      const arrivalMinutes = departure.hour * 60 + departure.minute + Math.round(travelHours * 60) + randomBetween(10, 40);
-      const arrivalHour = Math.min(12, Math.floor(arrivalMinutes / 60));
-      const arrivalMin = arrivalMinutes % 60;
-
-      const returnDeparture = generateRandomTime(14, 0, 60);
-      const returnArrivalMinutes = returnDeparture.hour * 60 + returnDeparture.minute + Math.round(travelHours * 60) + randomBetween(10, 40);
-      const returnArrivalHour = Math.min(20, Math.floor(returnArrivalMinutes / 60));
-      const returnArrivalMin = Math.min(59, returnArrivalMinutes % 60);
-
-      const startDate1 = new Date(day);
-      startDate1.setHours(departure.hour, departure.minute, 0, 0);
-      const endDate1 = new Date(day);
-      endDate1.setHours(arrivalHour, arrivalMin, 0, 0);
-
-      trips.push({
-        vehicle_id: vehicleId,
-        driver_name: driverName,
-        start_date: startDate1.toISOString(),
-        end_date: endDate1.toISOString(),
-        purpose: 'služební',
-        start_location: 'Ústí nad Labem',
-        end_location: chosen.end_city,
-        start_km: runningKm,
-        end_km: runningKm + oneWayKm,
-        distance: oneWayKm,
-      });
-      runningKm += oneWayKm;
-
-      const startDate2 = new Date(day);
-      startDate2.setHours(returnDeparture.hour, returnDeparture.minute, 0, 0);
-      const endDate2 = new Date(day);
-      endDate2.setHours(returnArrivalHour, returnArrivalMin, 0, 0);
-
-      trips.push({
-        vehicle_id: vehicleId,
-        driver_name: driverName,
-        start_date: startDate2.toISOString(),
-        end_date: endDate2.toISOString(),
-        purpose: 'služební',
-        start_location: chosen.end_city,
-        end_location: 'Ústí nad Labem',
-        start_km: runningKm,
-        end_km: runningKm + oneWayKm,
-        distance: oneWayKm,
-      });
-      runningKm += oneWayKm;
-      totalKm += oneWayKm * 2;
+      const tripPair = createTripPair(vehicleId, driverName, day, chosen);
+      trips.push(...tripPair);
+      totalKm += chosen.distance_km * 2;
     }
   }
 
-  // Sort all trips by date
+  // Seřaď všechny cesty chronologicky
   trips.sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
 
-  // Recalculate running km after sorting
+  // Přepočítej km (running odometer)
   let km = currentVehicleKm;
   for (const trip of trips) {
     trip.start_km = km;

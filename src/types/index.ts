@@ -40,6 +40,7 @@ export interface Distance {
   start_city: string;
   end_city: string;
   distance_km: number;
+  travel_time_min: number;
 }
 
 export interface TripFormData {
