@@ -82,10 +82,20 @@ export function TripsPage() {
 
   const handleDeleteTrip = useCallback(async () => {
     if (selectedTrip && window.confirm('Opravdu chcete odstranit tuto jízdu?')) {
+      const vehicleId = selectedTrip.vehicle_id;
+      const deletedDistance = selectedTrip.distance;
+      const vehicle = getVehicleById(vehicleId);
+
       await deleteTrip(selectedTrip.id);
+
+      // Aktualizovat stav km na vozidle po smazání cesty
+      if (vehicle && deletedDistance) {
+        await updateVehicleKm(vehicleId, vehicle.current_km - deletedDistance);
+      }
+
       setSelectedTrip(null);
     }
-  }, [selectedTrip, deleteTrip]);
+  }, [selectedTrip, deleteTrip, getVehicleById, updateVehicleKm]);
 
   const handleFormSubmit = useCallback(async (data: TripFormData, createReturnTrip: boolean): Promise<boolean> => {
     const distance = getDistance(data.start_location, data.end_location);
@@ -99,6 +109,14 @@ export function TripsPage() {
     let success: boolean;
     if (editingTrip) {
       success = await updateTrip(editingTrip.id, data, startKm, distance);
+      if (success) {
+        // Aktualizovat km: odečíst starou vzdálenost, přičíst novou
+        const oldDistance = editingTrip.distance || 0;
+        const kmDiff = distance - oldDistance;
+        if (kmDiff !== 0) {
+          await updateVehicleKm(data.vehicle_id, vehicle.current_km + kmDiff);
+        }
+      }
     } else {
       success = await createTrip(data, startKm, distance, createReturnTrip);
       if (success) {
