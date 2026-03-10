@@ -134,6 +134,9 @@ ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash;
 INSERT INTO users (username, password_hash) VALUES ('tyna.vyravova', 'g@stro2026')
 ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash;
 
+INSERT INTO users (username, password_hash) VALUES ('eva.rokytova', 'Eva2026')
+ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash;
+
 -- =============================================================================
 -- VZDÁLENOSTI Z ÚSTÍ NAD LABEM (přesné km)
 -- =============================================================================

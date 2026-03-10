@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cestovní příkazy – Uživatelský manuál</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap');
+
+        :root {
+            --primary: #3b82f6;
+            --primary-light: #60a5fa;
+            --primary-dark: #2563eb;
+            --accent: #d946ef;
+            --accent-light: #e879f9;
+            --green: #22c55e;
+            --red: #ef4444;
+            --amber: #f59e0b;
+            --app-bg: #0f172a;
+            --app-bg2: #1e293b;
+            --app-bg3: #334155;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', system-ui, sans-serif;
+            color: var(--slate-700);
+            line-height: 1.7;
+            background: white;
+            font-size: 14px;
+        }
+
+        @media print {
+            body { font-size: 11pt; }
+            .cover-page { page-break-after: always; }
+            .toc { page-break-after: always; }
+            .chapter { page-break-before: always; }
+            .no-break { page-break-inside: avoid; }
+            .screen-mock { box-shadow: none !important; border: 1px solid #ddd; }
+        }
+
+        /* ===== COVER PAGE ===== */
+        .cover-page {
+            min-height: 100vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            color: white; padding: 60px 40px; position: relative; overflow: hidden;
+        }
+        .cover-page::before {
+            content: ''; position: absolute; top: -100px; right: -100px;
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(59,130,246,0.3), transparent 70%);
+            border-radius: 50%;
+        }
+        .cover-page::after {
+            content: ''; position: absolute; bottom: -100px; left: -100px;
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(217,70,239,0.2), transparent 70%);
+            border-radius: 50%;
+        }
+        .cover-logo {
+            width: 80px; height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 20px; display: flex; align-items: center; justify-content: center;
+            margin-bottom: 40px; box-shadow: 0 20px 60px rgba(59,130,246,0.4);
+            position: relative; z-index: 1;
+        }
+        .cover-logo svg { width: 40px; height: 40px; fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .cover-title { font-family: 'Sora', sans-serif; font-size: 42px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; position: relative; z-index: 1; }
+        .cover-subtitle { font-size: 20px; color: rgba(255,255,255,0.6); margin-bottom: 60px; position: relative; z-index: 1; }
+        .cover-meta { position: relative; z-index: 1; color: rgba(255,255,255,0.4); font-size: 13px; }
+        .cover-meta strong { color: rgba(255,255,255,0.7); }
+
+        /* ===== TOC ===== */
+        .toc { padding: 60px 80px; min-height: 100vh; }
+        .toc h2 { font-family: 'Sora', sans-serif; font-size: 28px; font-weight: 700; color: var(--slate-800); margin-bottom: 30px; padding-bottom: 12px; border-bottom: 3px solid var(--primary); display: inline-block; }
+        .toc-list { list-style: none; counter-reset: toc-counter; }
+        .toc-list li { counter-increment: toc-counter; padding: 12px 0; border-bottom: 1px solid var(--slate-100); display: flex; align-items: center; gap: 16px; }
+        .toc-list li::before { content: counter(toc-counter); display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-radius: 10px; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+        .toc-list a { color: var(--slate-700); text-decoration: none; font-weight: 500; font-size: 15px; }
+        .toc-list a:hover { color: var(--primary); }
+
+        /* ===== CHAPTERS ===== */
+        .chapter { padding: 50px 80px 60px; }
+        .chapter-header { margin-bottom: 36px; padding-bottom: 16px; border-bottom: 2px solid var(--slate-200); }
+        .chapter-number { display: inline-block; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; font-weight: 700; font-size: 13px; padding: 4px 14px; border-radius: 20px; margin-bottom: 8px; letter-spacing: 0.5px; }
+        .chapter-title { font-family: 'Sora', sans-serif; font-size: 28px; font-weight: 700; color: var(--slate-800); }
+        h3 { font-family: 'Sora', sans-serif; font-size: 18px; font-weight: 700; color: var(--slate-800); margin-top: 32px; margin-bottom: 12px; }
+        h4 { font-size: 15px; font-weight: 600; color: var(--slate-700); margin-top: 24px; margin-bottom: 8px; }
+        p { margin-bottom: 12px; color: var(--slate-600); }
+
+        /* ===== INFO BOXES ===== */
+        .info-box { padding: 16px 20px; border-radius: 12px; margin: 16px 0; font-size: 13px; line-height: 1.6; }
+        .info-box.tip { background: #eff6ff; border-left: 4px solid #3b82f6; color: #1e40af; }
+        .info-box.warning { background: #fef3c7; border-left: 4px solid #f59e0b; color: #92400e; }
+        .info-box.important { background: #fef2f2; border-left: 4px solid #ef4444; color: #991b1b; }
+        .info-box.success { background: #f0fdf4; border-left: 4px solid #22c55e; color: #166534; }
+        .info-box-label { font-weight: 700; display: block; margin-bottom: 4px; }
+
+        /* ===== SCREEN MOCKS ===== */
+        .screen-mock {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            border-radius: 16px; overflow: hidden; margin: 24px 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            border: 1px solid var(--app-bg3);
+        }
+        .screen-mock-bar { background: var(--app-bg2); padding: 10px 16px; display: flex; align-items: center; gap: 8px; }
+        .screen-mock-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .screen-mock-dot.red { background: #ff5f57; }
+        .screen-mock-dot.yellow { background: #febc2e; }
+        .screen-mock-dot.green { background: #28c840; }
+        .screen-mock-url { flex: 1; background: var(--app-bg3); border-radius: 6px; padding: 4px 12px; color: var(--slate-400); font-size: 11px; margin-left: 8px; }
+        .screen-mock-content { padding: 20px 24px; color: #f8fafc; }
+
+        /* ===== APP HEADER MOCK ===== */
+        .mock-app-header {
+            background: rgba(30,41,59,0.8); border-bottom: 1px solid rgba(148,163,184,0.1);
+            padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;
+            margin: -20px -24px 16px -24px;
+        }
+        .mock-app-header-left { display: flex; align-items: center; gap: 10px; }
+        .mock-app-header-logo { width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .mock-app-header-logo svg { width: 18px; height: 18px; fill: none; stroke: white; stroke-width: 2; }
+        .mock-app-header-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 15px; color: white; }
+        .mock-app-header-subtitle { font-size: 11px; color: var(--slate-400); }
+        .mock-app-header-right { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--slate-400); }
+
+        /* ===== APP TAB NAV ===== */
+        .mock-tab-nav { display: flex; gap: 0; border-bottom: 1px solid rgba(148,163,184,0.1); margin: 0 -24px; padding: 0 24px; margin-bottom: 16px; }
+        .mock-tab { padding: 12px 20px; font-size: 13px; font-weight: 500; color: var(--slate-400); position: relative; display: flex; align-items: center; gap: 6px; }
+        .mock-tab.active { color: var(--primary-light); }
+        .mock-tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--primary), var(--accent)); }
+        .mock-tab svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+        /* ===== MODAL MOCK ===== */
+        .mock-modal {
+            background: var(--app-bg2); border-radius: 16px; overflow: hidden;
+            border: 1px solid var(--app-bg3); max-width: 500px; margin: 0 auto;
+        }
+        .mock-modal-header {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .mock-modal-header h4 { color: white; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 16px; margin: 0; }
+        .mock-modal-body { padding: 20px; }
+
+        /* ===== UI COMPONENTS ===== */
+        .mock-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 600; border: none; cursor: default; }
+        .mock-btn.primary { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; }
+        .mock-btn.danger { background: linear-gradient(135deg, var(--amber), var(--red)); color: white; }
+        .mock-btn.outline { background: var(--app-bg2); border: 1px solid var(--app-bg3); color: var(--slate-300); }
+
+        .mock-input {
+            width: 100%; background: rgba(15,23,42,0.5); border: 1px solid var(--app-bg3);
+            border-radius: 10px; padding: 10px 14px; color: white; font-size: 13px;
+            font-family: 'Outfit', sans-serif;
+        }
+        .mock-input.with-icon { padding-left: 36px; }
+        .mock-select { background: var(--app-bg); border: 1px solid var(--app-bg3); border-radius: 10px; padding: 10px 14px; color: white; font-size: 13px; width: 100%; }
+        .mock-label { font-size: 12px; font-weight: 500; color: var(--slate-300); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+        .mock-label svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+        .mock-form-field { margin-bottom: 14px; }
+        .mock-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+
+        .mock-card {
+            background: rgba(30,41,59,0.6); border: 1px solid rgba(148,163,184,0.1);
+            border-radius: 14px; padding: 16px 20px; margin: 8px 0;
+        }
+        .mock-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .mock-badge.green { background: rgba(34,197,94,0.15); color: #4ade80; }
+        .mock-badge.red { background: rgba(239,68,68,0.15); color: #f87171; }
+
+        /* ===== VEHICLE CARD ===== */
+        .mock-vehicle-card {
+            background: rgba(30,41,59,0.6); border: 1px solid rgba(148,163,184,0.1);
+            border-radius: 14px; padding: 20px; margin: 10px 0;
+        }
+        .mock-vehicle-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+        .mock-vehicle-info { display: flex; align-items: center; gap: 12px; }
+        .mock-vehicle-icon { width: 44px; height: 44px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .mock-vehicle-icon svg { width: 22px; height: 22px; fill: none; stroke: white; stroke-width: 2; }
+        .mock-vehicle-name { font-weight: 600; font-size: 15px; color: white; }
+        .mock-vehicle-spz { font-size: 12px; color: var(--slate-400); font-family: monospace; }
+        .mock-vehicle-details { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 12px; color: var(--slate-400); }
+        .mock-vehicle-details span { color: white; font-weight: 500; }
+
+        /* ===== VEHICLE DETAIL MODAL ===== */
+        .mock-detail-header {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            padding: 20px; display: flex; justify-content: space-between; align-items: flex-start;
+        }
+        .mock-detail-header-left { display: flex; align-items: center; gap: 14px; }
+        .mock-detail-icon { width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+        .mock-detail-icon svg { width: 24px; height: 24px; fill: none; stroke: white; stroke-width: 2; }
+        .mock-detail-tabs { display: flex; gap: 0; padding: 0 20px; background: rgba(30,41,59,0.5); }
+        .mock-detail-tab { padding: 12px 16px; font-size: 13px; font-weight: 500; color: var(--slate-400); cursor: default; display: flex; align-items: center; gap: 6px; position: relative; }
+        .mock-detail-tab.active { color: white; }
+        .mock-detail-tab.active::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: white; }
+        .mock-detail-tab .count { background: rgba(255,255,255,0.15); padding: 1px 8px; border-radius: 10px; font-size: 11px; margin-left: 4px; }
+
+        /* ===== TRIP ROW ===== */
+        .mock-trip-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 20px; border-bottom: 1px solid rgba(148,163,184,0.06);
+        }
+        .mock-trip-row:hover { background: rgba(59,130,246,0.05); }
+        .mock-trip-date { font-size: 12px; color: var(--primary-light); font-weight: 500; display: flex; align-items: center; gap: 6px; }
+        .mock-trip-date svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .mock-trip-route { font-size: 13px; color: white; font-weight: 500; }
+        .mock-trip-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+        .mock-trip-dot.start { background: var(--green); }
+        .mock-trip-dot.end { background: #f87171; }
+        .mock-trip-driver { font-size: 12px; color: var(--slate-400); display: flex; align-items: center; gap: 4px; }
+        .mock-trip-km { font-size: 13px; color: var(--accent-light); font-weight: 600; }
+
+        /* ===== GENERATOR REQUEST ===== */
+        .mock-gen-card {
+            background: rgba(30,41,59,0.6); border: 1px solid rgba(148,163,184,0.1);
+            border-radius: 14px; padding: 20px; margin: 12px 0;
+        }
+        .mock-gen-icon { width: 44px; height: 44px; background: linear-gradient(135deg, var(--accent), var(--primary)); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .mock-gen-icon svg { width: 22px; height: 22px; fill: none; stroke: white; stroke-width: 2; }
+
+        /* ===== STEPS ===== */
+        .steps { counter-reset: step-counter; margin: 20px 0; }
+        .step { counter-increment: step-counter; display: flex; gap: 16px; margin-bottom: 16px; align-items: flex-start; }
+        .step::before { content: counter(step-counter); display: flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; font-weight: 700; font-size: 13px; margin-top: 2px; }
+        .step-content { flex: 1; }
+        .step-content strong { color: var(--slate-800); }
+
+        /* ===== TABLE ===== */
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+        thead th { background: var(--slate-100); color: var(--slate-700); font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--slate-200); }
+        tbody td { padding: 10px 14px; border-bottom: 1px solid var(--slate-100); color: var(--slate-600); }
+        tbody tr:hover { background: var(--slate-50); }
+
+        /* ===== FLOW DIAGRAM ===== */
+        .flow { display: flex; align-items: center; gap: 0; margin: 24px 0; flex-wrap: wrap; justify-content: center; }
+        .flow-step { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; padding: 12px 20px; border-radius: 12px; font-size: 12px; font-weight: 600; text-align: center; min-width: 120px; }
+        .flow-step.accent { background: linear-gradient(135deg, var(--accent), var(--primary)); }
+        .flow-step.green { background: linear-gradient(135deg, var(--green), #16a34a); }
+        .flow-step.danger { background: linear-gradient(135deg, var(--amber), var(--red)); }
+        .flow-arrow { font-size: 20px; color: var(--slate-300); padding: 0 8px; }
+
+        ul, ol { margin: 8px 0 16px 24px; color: var(--slate-600); }
+        li { margin-bottom: 6px; }
+        code { background: var(--slate-100); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--primary-dark); }
+        hr { border: none; border-top: 1px solid var(--slate-200); margin: 32px 0; }
+
+        /* SVG icons inline helper */
+        .ico { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; display: inline-block; vertical-align: -2px; }
+    </style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover-page">
+    <div class="cover-logo">
+        <svg viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.1-3.2C13.1 5.9 12 5 10.7 5H5.2C4 5 2.9 5.9 2.4 6.9L1 10c-1 .5-1 1.1-1 1.7V16c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+    </div>
+    <h1 class="cover-title">Cestovní příkazy</h1>
+    <p class="cover-subtitle">Uživatelský manuál aplikace</p>
+    <div class="cover-meta">
+        <p><strong>Verze:</strong> 1.0 &nbsp;|&nbsp; <strong>Datum:</strong> Březen 2026</p>
+        <p style="margin-top:8px"><strong>Společnost:</strong> GastroTechnoGroup s.r.o.</p>
+        <p style="margin-top:4px; opacity:0.6">Evidence služebních jízd &nbsp;·&nbsp; Správa vozového parku &nbsp;·&nbsp; Automatický generátor cest</p>
+    </div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+    <h2>Obsah</h2>
+    <ol class="toc-list">
+        <li><a href="#ch1">O aplikaci – K čemu slouží a proč</a></li>
+        <li><a href="#ch2">Přihlášení do systému</a></li>
+        <li><a href="#ch3">Záložka Cesty – Přehled a správa jízd</a></li>
+        <li><a href="#ch4">Ruční zadání nové jízdy</a></li>
+        <li><a href="#ch5">Záložka Vozidla – Správa vozového parku</a></li>
+        <li><a href="#ch6">Generátor cest – Automatické generování jízd</a></li>
+        <li><a href="#ch7">Jak funguje generátor – Pravidla a podmínky</a></li>
+        <li><a href="#ch8">Export dat do CSV</a></li>
+        <li><a href="#ch9">Důležité pojmy a automatické chování</a></li>
+        <li><a href="#ch10">Časté otázky (FAQ)</a></li>
+    </ol>
+</div>
+
+<!-- CHAPTER 1 -->
+<div class="chapter" id="ch1">
+    <div class="chapter-header">
+        <span class="chapter-number">Kapitola 1</span>
+        <h2 class="chapter-title">O aplikaci – K čemu slouží a proč</h2>
+    </div>
+
+    <p><strong>Cestovní příkazy</strong> je webová aplikace pro evidenci služebních jízd a správu vozového parku. Aplikace umožňuje:</p>
+    <ul>
+        <li><strong>Evidovat služební jízdy</strong> – ručně zadávat jednotlivé cesty s výpočtem kilometrů</li>
+        <li><strong>Spravovat vozidla</strong> – přidávat, editovat a sledovat stav tachometru</li>
+        <li><strong>Automaticky generovat cesty</strong> – na základě požadovaného stavu tachometru generátor vytvoří realistické služební jízdy</li>
+        <li><strong>Exportovat data</strong> – stáhnout jízdy ve formátu CSV pro zpracování v Excelu</li>
+    </ul>
+
+    <div class="info-box tip">
+        <span class="info-box-label">💡 Proč aplikaci používat?</span>
+        Aplikace šetří čas při vyplňování cestovních příkazů. Místo ručního zadávání každé jízdy stačí zadat cílový stav tachometru a generátor automaticky vytvoří realistické služební cesty s věrohodnými časy, vzdálenostmi a destinacemi.
+    </div>
+
+    <h3>Hlavní navigace</h3>
+    <p>Aplikace má tři hlavní záložky, mezi kterými přepínáte v horní liště:</p>
+
+    <!-- Real app navigation mock -->
+    <div class="screen-mock">
+        <div class="screen-mock-bar">
+            <div class="screen-mock-dot red"></div>
+            <div class="screen-mock-dot yellow"></div>
+            <div class="screen-mock-dot green"></div>
+            <div class="screen-mock-url">https://tomaslapos.github.io/Cestovni_prikazy/</div>
+        </div>
+        <div class="screen-mock-content">
+            <div class="mock-app-header">
+                <div class="mock-app-header-left">
+                    <div class="mock-app-header-logo">
+                        <svg viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.1-3.2C13.1 5.9 12 5 10.7 5H5.2C4 5 2.9 5.9 2.4 6.9L1 10c-1 .5-1 1.1-1 1.7V16c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+                    </div>
+                    <div>
+                        <div class="mock-app-header-title">Cestovní příkazy</div>
+                        <div class="mock-app-header-subtitle">Evidence služebních jízd</div>
+                    </div>
+                </div>
+                <div class="mock-app-header-right">
+                    <span>👤 lapos.tomas@gastrotechnogroup.cz</span>
+                    <span style="color:var(--slate-500)">→ Odhlásit</span>
+                </div>
+            </div>
+            <div class="mock-tab-nav">
+                <div class="mock-tab active">
+                    <svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Cesty
+                </div>
+                <div class="mock-tab">
+                    <svg viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.1-3.2C13.1 5.9 12 5 10.7 5H5.2C4 5 2.9 5.9 2.4 6.9L1 10c-1 .5-1 1.1-1 1.7V16c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+                    Vozidla
+                </div>
+                <div class="mock-tab">
+                    <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    Generátor
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table>
+        <thead><tr><th>Záložka</th><th>Funkce</th><th>Kdy použít</th></tr></thead>
+        <tbody>
+            <tr><td><strong>Cesty</strong></td><td>Přehled, filtrování, ruční přidání a export jízd</td><td>Pro prohlížení a správu jednotlivých jízd</td></tr>
+            <tr><td><strong>Vozidla</strong></td><td>Seznam vozidel, detail, editace, přidání nového</td><td>Pro správu vozového parku a kontrolu stavu km</td></tr>
+            <tr><td><strong>Generátor</strong></td><td>Automatické generování služebních cest</td><td>Pro hromadné vygenerování jízd za období</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- CHAPTER 2 -->
+<div class="chapter" id="ch2">
+    <div class="chapter-header">
+        <span class="chapter-number">Kapitola 2</span>
+        <h2 class="chapter-title">Přihlášení do systému</h2>
+    </div>
+
+    <p>Při otevření aplikace se zobrazí přihlašovací obrazovka. Pro přístup do aplikace potřebujete uživatelské jméno a heslo.</p>
+
+    <!-- Login mock - matching real app -->
+    <div class="screen-mock" style="max-width:480px;margin:24px auto">
+        <div class="screen-mock-bar">
+            <div class="screen-mock-dot red"></div>
+            <div class="screen-mock-dot yellow"></div>
+            <div class="screen-mock-dot green"></div>
+        </div>
+        <div class="screen-mock-content" style="padding:50px 40px;position:relative;overflow:hidden;min-height:400px">
+            <!-- Background blurs like real app -->
+            <div style="position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:rgba(59,130,246,0.15);border-radius:50%;filter:blur(60px)"></div>
+            <div style="position:absolute;bottom:-60px;left:-60px;width:200px;height:200px;background:rgba(217,70,239,0.15);border-radius:50%;filter:blur(60px)"></div>
+
+            <div style="position:relative;z-index:1;background:rgba(30,41,59,0.8);backdrop-filter:blur(12px);border:1px solid rgba(148,163,184,0.1);border-radius:16px;padding:32px 28px">
+                <div style="text-align:center;margin-bottom:28px">
+                    <div style="width:56px;height:56px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+                        <svg style="width:28px;height:28px;fill:none;stroke:white;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.1-3.2C13.1 5.9 12 5 10.7 5H5.2C4 5 2.9 5.9 2.4 6.9L1 10c-1 .5-1 1.1-1 1.7V16c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+                    </div>
+                    <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:20px;color:white">Cestovní příkazy</div>
+                    <div style="font-size:13px;color:var(--slate-400);margin-top:6px">Přihlaste se do systému</div>
+                </div>
+
+                <div style="margin-bottom:16px">
+                    <div class="mock-label">Uživatelské jméno</div>
+                    <div style="position:relative">
+                        <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;fill:none;stroke:var(--slate-400);stroke-width:2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <div class="mock-input with-icon" style="color:var(--slate-300)">lapos.tomas@gastrotechnogroup.cz</div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:20px">
+                    <div class="mock-label">Heslo</div>
+                    <div style="position:relative">
+                        <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;fill:none;stroke:var(--slate-400);stroke-width:2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <div class="mock-input with-icon" style="color:var(--slate-400)">••••••••••</div>
+                    </div>
+                </div>
+
+                <div style="background:linear-gradient(90deg,var(--primary),var(--primary-dark));color:white;text-align:center;padding:12px;border-radius:10px;font-weight:600;font-size:14px;box-shadow:0 4px 12px rgba(59,130,246,0.25)">Přihlásit se</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="steps">
+        <div class="step"><div class="step-content"><strong>Zadejte uživatelské jméno</strong> – vaše přihlašovací jméno přidělené administrátorem.</div></div>
+        <div class="step"><div class="step-content"><strong>Zadejte heslo</strong> – vaše osobní heslo.</div></div>
+        <div class="step"><div class="step-content"><strong>Klikněte na „Přihlásit se"</strong> – po úspěšném přihlášení se zobrazí hlavní obrazovka.</div></div>
+    </div>
+
+    <div class="info-box tip">
+        <span class="info-box-label">💡 Tip</span>
+        Přihlášení zůstane aktivní i po zavření prohlížeče. Pro odhlášení klikněte na tlačítko <strong>Odhlásit</strong> v pravém horním rohu.
+    </div>
+
+    <div class="info-box warning">
+        <span class="info-box-label">⚠️ Chybové hlášení</span>
+        Pokud zadáte špatné jméno nebo heslo, zobrazí se červená zpráva „Neplatné přihlašovací údaje". Zkontrolujte správnost údajů a zkuste to znovu.
+    </div>
+</div>
+
+<!-- CHAPTER 3 -->
+<div class="chapter" id="ch3">
+    <div class="chapter-header">
+        <span class="chapter-number">Kapitola 3</span>
+        <h2 class="chapter-title">Záložka Cesty – Přehled a správa jízd</h2>
+    </div>
+
+    <p>Záložka <strong>Cesty</strong> je hlavní obrazovka pro prohlížení všech evidovaných služebních jízd. Nabízí dva režimy zobrazení, filtrování a export.</p>
+
+    <!-- Trips calendar mock -->
+    <div class="screen-mock">
+        <div class="screen-mock-bar">
+            <div class="screen-mock-dot red"></div>
+            <div class="screen-mock-dot yellow"></div>
+            <div class="screen-mock-dot green"></div>
+            <div class="screen-mock-url">https://tomaslapos.github.io/Cestovni_prikazy/</div>
+        </div>
+        <div class="screen-mock-content">
+            <!-- Filter bar -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+                <div style="display:flex;gap:6px;align-items:center">
+                    <div class="mock-btn primary" style="padding:6px 14px">📅 Kalendář</div>
+                    <div class="mock-btn outline" style="padding:6px 14px">≡ Seznam</div>
+                    <div class="mock-select" style="width:auto;padding:6px 12px;font-size:11px">Měsíc ▾</div>
+                    <div class="mock-select" style="width:auto;padding:6px 12px;font-size:11px">Rok ▾</div>
+                    <div class="mock-select" style="width:auto;padding:6px 12px;font-size:11px">Všechna vozidla ▾</div>
+                    <div class="mock-select" style="width:auto;padding:6px 12px;font-size:11px">Všichni řidiči ▾</div>
+                </div>
+                <div style="display:flex;gap:6px">
+                    <div class="mock-btn outline" style="font-size:11px">↓ Export CSV</div>
+                    <div class="mock-btn primary" style="font-size:11px">+ Přidat jízdu</div>
+                </div>
+            </div>
+            <!-- Calendar header -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <div style="display:flex;gap:8px">
+                    <span style="font-size:12px;color:var(--slate-400);padding:4px 10px;background:var(--app-bg2);border:1px solid var(--app-bg3);border-radius:6px">Dnes</span>
+                    <span style="font-size:12px;color:var(--slate-400);padding:4px 10px;background:var(--app-bg2);border:1px solid var(--app-bg3);border-radius:6px">Předchozí</span>
+                    <span style="font-size:12px;color:var(--slate-400);padding:4px 10px;background:var(--app-bg2);border:1px solid var(--app-bg3);border-radius:6px">Další</span>
+                </div>
+                <div style="font-family:'Sora',sans-serif;font-weight:600;font-size:17px;color:white">března 2026</div>
+                <div style="display:flex;gap:4px">
+                    <span style="font-size:12px;color:white;padding:4px 10px;background:var(--primary);border-radius:6px">Měsíc</span>
+                    <span style="font-size:12px;color:var(--slate-400);padding:4px 10px;background:var(--app-bg2);border:1px solid var(--app-bg3);border-radius:6px">Týden</span>
+                    <span style="font-size:12px;color:var(--slate-400);padding:4px 10px;background:var(--app-bg2);border:1px solid var(--app-bg3);border-radius:6px">Den</span>
+                </div>
+            </div>
+            <!-- Calendar grid -->
+            <div style="border:1px solid var(--app-bg3);border-radius:10px;overflow:hidden">
+                <div style="display:grid;grid-template-columns:repeat(7,1fr);background:var(--app-bg2);font-size:12px;font-weight:500;color:var(--slate-300);text-align:center">
+                    <div style="padding:10px;border-right:1px solid var(--app-bg3)">pon</div>
+                    <div style="padding:10px;border-right:1px solid var(--app-bg3)">úte</div>
+                    <div style="padding:10px;border-right:1px solid var(--app-bg3)">stř</div>
+                    <div style="padding:10px;border-right:1px solid var(--app-bg3)">čtv</div>
+                    <div style="padding:10px;border-right:1px solid var(--app-bg3)">pát</div>
+                    <div style="padding:10px;border-right:1px solid var(--app-bg3);color:var(--red)">sob</div>
+                    <div style="padding:10px;color:var(--red)">ned</div>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(7,1fr)">
+                    <div style="padding:8px;border:1px solid var(--app-bg3);min-height:50px;font-size:11px;color:var(--slate-500)">02</div>
+                    <div style="padding:8px;border:1px solid var(--app-bg3);min-height:50px;font-size:11px;color:var(--slate-500)">03</div>
+                    <div style="padding:8px;border:1px solid var(--app-bg3);min-height:50px;font-size:11px;color:var(--slate-500)">04</div>
+                    <div style="padding:8px;border:1px solid var(--app-bg3);min-height:50px;font-size:11px;color:var(--slate-500)">05</div>
+                    <div style="padding:8px;border:1px solid var(--app-bg3);min-height:50px;font-size:11px;color:var(--slate-500)">06</div>
+                    <div style="padding:8px;border:1px solid var(--app-bg3);min-height:50px;font-size:11px;color:var(--red)">07</div>
+                    <div style="padding:8px;border:1px solid var(--app-bg3);min-height:50px;font-size:11px;color:var(--red)">08</div>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(7,1fr)">
+                    <div style="padding:8px;border:1px solid var(--app-bg3);min-height:50px;font-size:11px;color:var(--slate-500)">09</div>
+                    <div style="padding:8px;border:1px solid var(--app-bg3);min-height:50px;font-size:11px;color:var(--primary);font-weight:600;background:rgba(59,130,246,0.1)">10</div>
+                    <div style="padding:8px;border:1px solid var(--app-bg3);min-height:50px;font-size:11px;color:var(--slate-500)">11</div>
+                    <div style="padding:8px;border:1px solid var(--app-bg3);min-height:50px;font-size:11px;color:var(--slate-500)">12</div>
+                    <div style="padding:8px;border:1px solid var(--app-bg3);min-height:50px;font-size:11px;color:var(--slate-500)">13</div>
+                    <div style="padding:8px;border:1px solid var(--app-bg3);min-height:50px;font-size:11px;color:var(--red)">14</div>
+                    <div style="padding:8px;border:1px solid var(--app-bg3);min-height:50px;font-size:11px;color:var(--red)">15</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3>Režimy zobrazení</h3>
+    <table>
+        <thead><tr><th>Režim</th><th>Popis</th></tr></thead>
+        <tbody>
+            <tr><td><strong>Kalendář</strong></td><td>Měsíční přehled jízd v kalendářové mřížce. Kliknutím na den zobrazíte jízdy daného dne.</td></tr>
+            <tr><td><strong>Seznam</strong></td><td>Tabulkový přehled všech jízd seřazených podle data.</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Filtrování jízd</h3>
+    <p>V horní části stránky jsou filtry, které umožňují zúžit zobrazené jízdy:</p>
+    <ul>
+        <li><strong>Měsíc a rok</strong> – zobrazí jízdy pouze za vybraný měsíc</li>
+        <li><strong>Vozidlo</strong> – filtruje podle konkrétního vozidla</li>
+        <li><strong>Řidič</strong> – filtruje podle jména řidiče</li>
+    </ul>
+
+    <h3>Detail jízdy</h3>
+    <p>Kliknutím na jízdu v kalendáři nebo seznamu se otevře detail s kompletními informacemi:</p>
+
+    <!-- Trip detail modal mock -->
+    <div class="screen-mock" style="max-width:500px;margin:24px auto">
+        <div class="screen-mock-bar">
+            <div class="screen-mock-dot red"></div>
+            <div class="screen-mock-dot yellow"></div>
+            <div class="screen-mock-dot green"></div>
+        </div>
+        <div class="screen-mock-content" style="padding:0">
+            <div class="mock-modal" style="max-width:100%">
+                <div class="mock-modal-header">
+                    <div>
+                        <h4 style="font-size:17px;margin:0">Detail jízdy</h4>
+                        <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:4px;display:flex;align-items:center;gap:6px">
+                            <span style="display:inline-block;width:6px;height:6px;background:#4ade80;border-radius:50%"></span>
+                            Harrachov → Ústí nad Labem
+                        </div>
+                    </div>
+                    <span style="color:rgba(255,255,255,0.6);font-size:18px;cursor:pointer">✕</span>
+                </div>
+                <div class="mock-modal-body">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+                        <div><div class="mock-label">📅 Datum začátku</div><div style="color:white;font-weight:500;font-size:13px">22. ledna 2026 01:00</div></div>
+                        <div><div class="mock-label">📅 Datum konce</div><div style="color:white;font-weight:500;font-size:13px">22. ledna 2026 01:00</div></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+                        <div><div class="mock-label">🚗 Vozidlo</div><div style="color:white;font-weight:500;font-size:13px">Škoda Superb <span style="color:var(--slate-400)">(7U7 6415)</span></div></div>
+                        <div><div class="mock-label">👤 Řidič</div><div style="color:var(--slate-400);font-size:13px">—</div></div>
+                    </div>
+                    <div style="margin-bottom:16px"><div class="mock-label">⊙ Účel</div><div style="color:white;font-weight:500;font-size:13px">služební</div></div>
+
+                    <div style="background:rgba(15,23,42,0.5);border:1px solid var(--app-bg3);border-radius:12px;padding:14px;margin-bottom:16px">
+                        <div style="font-size:12px;color:var(--slate-400);margin-bottom:8px">⏱ Stav kilometrů</div>
+                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center">
+                            <div><div style="font-size:10px;color:var(--slate-500)">Počáteční</div><div style="font-size:15px;font-weight:700;color:white">164 670</div></div>
+                            <div><div style="font-size:10px;color:var(--slate-500)">Konečný</div><div style="font-size:15px;font-weight:700;color:white">164 796</div></div>
+                            <div><div style="font-size:10px;color:var(--accent-light)">Najeto</div><div style="font-size:15px;font-weight:700;color:var(--accent-light)">126 km</div></div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:3fr 1fr;gap:10px">
+                        <div style="background:linear-gradient(135deg,var(--primary),var(--accent));color:white;text-align:center;padding:12px;border-radius:10px;font-weight:600;font-size:13px">✏️ Upravit</div>
+                        <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;text-align:center;padding:12px;border-radius:10px;font-weight:600;font-size:13px">🗑 Odstranit</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p>V detailu jízdy máte možnost:</p>
+    <ul>
+        <li><strong>Upravit</strong> – otevře formulář pro editaci jízdy</li>
+        <li><strong>Smazat</strong> – po potvrzení odstraní jízdu (stav km na vozidle se automaticky sníží)</li>
+    </ul>
+
+    <div class="info-box success">
+        <span class="info-box-label">✅ Automatické chování</span>
+        Při smazání jízdy se automaticky sníží stav tachometru na vozidle o odpovídající počet km. Nemusíte nic přepočítávat ručně.
+    </div>
+</div>
+
+<!-- CHAPTER 4 -->
+<div class="chapter" id="ch4">
+    <div class="chapter-header">
+        <span class="chapter-number">Kapitola 4</span>
+        <h2 class="chapter-title">Ruční zadání nové jízdy</h2>
+    </div>
+
+    <p>Pro ruční vytvoření nové jízdy klikněte na tlačítko <strong>+ Přidat jízdu</strong> v pravém horním rohu záložky Cesty. Otevře se modální okno s formulářem:</p>
+
+    <!-- New trip form mock -->
+    <div class="screen-mock" style="max-width:500px;margin:24px auto">
+        <div class="screen-mock-bar">
+            <div class="screen-mock-dot red"></div>
+            <div class="screen-mock-dot yellow"></div>
+            <div class="screen-mock-dot green"></div>
+        </div>
+        <div class="screen-mock-content" style="padding:0">
+            <div class="mock-modal" style="max-width:100%">
+                <div class="mock-modal-header">
+                    <h4 style="font-size:17px;margin:0">Nová jízda</h4>
+                    <span style="color:rgba(255,255,255,0.6);font-size:18px">✕</span>
+                </div>
+                <div class="mock-modal-body">
+                    <div class="mock-form-row">
+                        <div>
+                            <div class="mock-label"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Datum začátku</div>
+                            <div class="mock-input" style="font-size:12px">10.03.2026 08:15</div>
+                        </div>
+                        <div>
+                            <div class="mock-label"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Datum konce</div>
+                            <div class="mock-input" style="font-size:12px">10.03.2026 11:00</div>
+                        </div>
+                    </div>
+                    <div class="mock-form-field">
+                        <div class="mock-label"><svg viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.1-3.2C13.1 5.9 12 5 10.7 5H5.2C4 5 2.9 5.9 2.4 6.9L1 10c-1 .5-1 1.1-1 1.7V16c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg> Vozidlo</div>
+                        <div class="mock-select">Vyberte vozidlo ▾</div>
+                    </div>
+                    <div class="mock-form-field">
+                        <div class="mock-label"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Řidič <span style="color:var(--slate-500)">(nepovinné)</span></div>
+                        <div class="mock-select">-- Nevybráno -- ▾</div>
+                    </div>
+                    <div class="mock-form-field">
+                        <div class="mock-label"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="1"/></svg> Účel</div>
+                        <div class="mock-input">služební</div>
+                    </div>
+                    <div class="mock-form-row">
+                        <div>
+                            <div class="mock-label"><svg viewBox="0 0 24 24" style="color:#4ade80"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> Začátek cesty</div>
+                            <div class="mock-select">Ústí nad Labem ▾</div>
+                        </div>
+                        <div>
+                            <div class="mock-label"><svg viewBox="0 0 24 24" style="color:#f87171"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> Cíl cesty</div>
+                            <div class="mock-select">Vyberte město ▾</div>
+                        </div>
+                    </div>
+
+                    <!-- Return trip checkbox -->
+                    <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(15,23,42,0.3);border:1px solid rgba(148,163,184,0.1);border-radius:12px;margin-bottom:16px">
+                        <div style="width:18px;height:18px;background:var(--primary);border-radius:4px;display:flex;align-items:center;justify-content:center">
+                            <svg style="width:12px;height:12px;stroke:white;fill:none;stroke-width:3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div>
+                            <div style="font-size:13px;color:white;font-weight:500">Vytvořit zpáteční jízdu</div>
+                            <div style="font-size:11px;color:var(--slate-400)">→ Ústí nad Labem</div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                        <div style="background:rgba(15,23,42,0.5);color:var(--slate-300);text-align:center;padding:12px;border-radius:10px;font-weight:500;font-size:13px">Zrušit</div>
+                        <div style="background:linear-gradient(90deg,var(--primary),var(--primary-dark));color:white;text-align:center;padding:12px;border-radius:10px;font-weight:600;font-size:13px;box-shadow:0 4px 12px rgba(59,130,246,0.25)">Vytvořit jízdu</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3>Postup vytvoření jízdy</h3>
+    <div class="steps">
+        <div class="step"><div class="step-content"><strong>Datum začátku a konce</strong> – vyplňte datum a čas odjezdu i příjezdu. Formát: DD.MM.YYYY HH:MM</div></div>
+        <div class="step"><div class="step-content"><strong>Vozidlo</strong> – vyberte ze seznamu aktivních vozidel. Pouze aktivní vozidla jsou zobrazena.</div></div>
+        <div class="step"><div class="step-content"><strong>Řidič</strong> – nepovinné. Pokud nevyberete, jízda se přiřadí řidiči vozidla.</div></div>
+        <div class="step"><div class="step-content"><strong>Účel</strong> – zadejte účel cesty (typicky „služební").</div></div>
+        <div class="step"><div class="step-content"><strong>Začátek a cíl cesty</strong> – vyberte města z přednastavených destinací. Vzdálenost se automaticky vypočte z databáze vzdáleností.</div></div>
+        <div class="step"><div class="step-content"><strong>Zpáteční jízda</strong> – zaškrtněte, pokud chcete automaticky vytvořit i cestu zpět.</div></div>
+        <div class="step"><div class="step-content"><strong>Vytvořit jízdu</strong> – po kliknutí se jízda uloží a stav tachometru na vozidle se automaticky zvýší.</div></div>
+    </div>
+
+    <div class="info-box tip">
+        <span class="info-box-label">💡 Vzdálenost a km</span>
+        Po výběru začátku a cíle cesty se automaticky zobrazí vypočtená vzdálenost a nový stav tachometru. Vzdálenosti jsou uloženy v databázi a nelze je měnit z formuláře.
+    </div>
+
+    <div class="info-box warning">
+        <span class="info-box-label">⚠️ Zpáteční jízda</span>
+        Pokud zaškrtnete „Vytvořit zpáteční jízdu", vytvoří se automaticky druhá jízda se zaměněným začátkem a cílem. Obě jízdy navýší stav km na vozidle.
+    </div>
+</div>
+
+<!-- CHAPTER 5 -->
+<div class="chapter" id="ch5">
+    <div class="chapter-header">
+        <span class="chapter-number">Kapitola 5</span>
+        <h2 class="chapter-title">Záložka Vozidla – Správa vozového parku</h2>
+    </div>
+
+    <p>Záložka <strong>Vozidla</strong> zobrazuje přehled všech registrovaných vozidel s klíčovými informacemi. Každá karta obsahuje název, SPZ, řidiče, datum pořízení, stav km a stav (aktivní/vyřazeno).</p>
+
+    <!-- Vehicles list mock -->
+    <div class="screen-mock">
+        <div class="screen-mock-bar">
+            <div class="screen-mock-dot red"></div>
+            <div class="screen-mock-dot yellow"></div>
+            <div class="screen-mock-dot green"></div>
+            <div class="screen-mock-url">https://tomaslapos.github.io/Cestovni_prikazy/</div>
+        </div>
+        <div class="screen-mock-content">
+            <div class="mock-app-header">
+                <div class="mock-app-header-left">
+                    <div class="mock-app-header-logo"><svg viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.1-3.2C13.1 5.9 12 5 10.7 5H5.2C4 5 2.9 5.9 2.4 6.9L1 10c-1 .5-1 1.1-1 1.7V16c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg></div>
+                    <div><div class="mock-app-header-title">Cestovní příkazy</div><div class="mock-app-header-subtitle">Evidence služebních jízd</div></div>
+                </div>
+                <div class="mock-app-header-right"><span>👤 lapos.tomas@gastrotechnogroup.cz</span><span style="color:var(--slate-500)">→ Odhlásit</span></div>
+            </div>
+            <div class="mock-tab-nav">
+                <div class="mock-tab"><svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> Cesty</div>
+                <div class="mock-tab active"><svg viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.1-3.2C13.1 5.9 12 5 10.7 5H5.2C4 5 2.9 5.9 2.4 6.9L1 10c-1 .5-1 1.1-1 1.7V16c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg> Vozidla</div>
+                <div class="mock-tab"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generátor</div>
+            </div>
+
+            <!-- Vehicle cards -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px">
+                <div class="mock-vehicle-card">
+                    <div class="mock-vehicle-card-top">
+                        <div class="mock-vehicle-info">
+                            <div class="mock-vehicle-icon"><svg viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.1-3.2C13.1 5.9 12 5 10.7 5H5.2C4 5 2.9 5.9 2.4 6.9L1 10c-1 .5-1 1.1-1 1.7V16c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg></div>
+                            <div><div class="mock-vehicle-name">Škoda Octavia</div><div class="mock-vehicle-spz">4U1 2345</div></div>
+                        </div>
+                        <span class="mock-badge green">Aktivní</span>
+                    </div>
+                    <div style="font-size:11px;color:var(--slate-400);display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                        <div>👤 Jan Novák</div><div>🏢 Obchod</div>
+                        <div>📅 1.1.2024</div><div style="color:var(--primary-light);font-weight:600">🔄 89 340 km</div>
+                    </div>
+                </div>
+                <div class="mock-vehicle-card">
+                    <div class="mock-vehicle-card-top">
+                        <div class="mock-vehicle-info">
+                            <div class="mock-vehicle-icon"><svg viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.1-3.2C13.1 5.9 12 5 10.7 5H5.2C4 5 2.9 5.9 2.4 6.9L1 10c-1 .5-1 1.1-1 1.7V16c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg></div>
+                            <div><div class="mock-vehicle-name">Škoda Fabia</div><div class="mock-vehicle-spz">4U7 6789</div></div>
+                        </div>
+                        <span class="mock-badge red">Vyřazeno</span>
+                    </div>
+                    <div style="font-size:11px;color:var(--slate-400);display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                        <div>👤 Eva Rokyto.</div><div>🏢 Marketing</div>
+                        <div>📅 15.3.2023</div><div style="color:var(--primary-light);font-weight:600">🔄 62 150 km</div>
+                    </div>
+                </div>
+                <div class="mock-vehicle-card">
+                    <div class="mock-vehicle-card-top">
+                        <div class="mock-vehicle-info">
+                            <div class="mock-vehicle-icon"><svg viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.1-3.2C13.1 5.9 12 5 10.7 5H5.2C4 5 2.9 5.9 2.4 6.9L1 10c-1 .5-1 1.1-1 1.7V16c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg></div>
+                            <div><div class="mock-vehicle-name">VW Passat</div><div class="mock-vehicle-spz">7AV1635</div></div>
+                        </div>
+                        <span class="mock-badge green">Aktivní</span>
+                    </div>
+                    <div style="font-size:11px;color:var(--slate-400);display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                        <div>👤 Tomáš Lapos</div><div>🏢 IT</div>
+                        <div>📅 1.2.2025</div><div style="color:var(--primary-light);font-weight:600">🔄 139 340 km</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3>Detail vozidla</h3>
+    <p>Kliknutím na kartu vozidla se otevře detailní přehled se dvěma záložkami: <strong>Detail vozidla</strong> a <strong>Jízdy vozidla</strong>.</p>
+
+    <h4>Záložka Detail vozidla</h4>
+    <p>Zobrazuje kompletní informace o vozidle včetně stavu kilometrů:</p>
+
+    <!-- Vehicle detail mock -->
+    <div class="screen-mock" style="max-width:540px;margin:24px auto">
+        <div class="screen-mock-bar">
+            <div class="screen-mock-dot red"></div>
+            <div class="screen-mock-dot yellow"></div>
+            <div class="screen-mock-dot green"></div>
+        </div>
+        <div class="screen-mock-content" style="padding:0">
+            <div class="mock-detail-header">
+                <div class="mock-detail-header-left">
+                    <div class="mock-detail-icon"><svg viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.1-3.2C13.1 5.9 12 5 10.7 5H5.2C4 5 2.9 5.9 2.4 6.9L1 10c-1 .5-1 1.1-1 1.7V16c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg></div>
+                    <div>
+                        <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:18px;color:white">VW Passat</div>
+                        <div style="font-size:13px;color:rgba(255,255,255,0.7)">7AV1635</div>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px">
+                    <span class="mock-badge green">Aktivní</span>
+                    <span style="color:rgba(255,255,255,0.6);font-size:18px">✕</span>
+                </div>
+            </div>
+            <div class="mock-detail-tabs">
+                <div class="mock-detail-tab active">Detail vozidla</div>
+                <div class="mock-detail-tab">
+                    <svg style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Jízdy vozidla <span class="count">212</span>
+                </div>
+            </div>
+            <div style="padding:20px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+                    <div>
+                        <div style="font-size:11px;color:var(--slate-400);display:flex;align-items:center;gap:5px">🏠 Vlastnictví</div>
+                        <div style="font-size:14px;color:white;font-weight:600;margin-top:2px">vlastní</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:var(--slate-400);display:flex;align-items:center;gap:5px">🏢 Středisko</div>
+                        <div style="font-size:14px;color:white;font-weight:600;margin-top:2px">IT</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:var(--slate-400);display:flex;align-items:center;gap:5px">👤 Řidič</div>
+                        <div style="font-size:14px;color:white;font-weight:600;margin-top:2px">Tomáš Lapos</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:var(--slate-400);display:flex;align-items:center;gap:5px">📅 Datum pořízení</div>
+                        <div style="font-size:14px;color:white;font-weight:600;margin-top:2px">1. února 2025</div>
+                    </div>
+                </div>
+
+                <!-- KM section -->
+                <div style="background:rgba(15,23,42,0.5);border:1px solid var(--app-bg3);border-radius:12px;padding:16px;margin-bottom:18px">
+                    <div style="font-size:12px;color:var(--slate-400);margin-bottom:10px">⏱ Stav kilometrů</div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);text-align:center;gap:10px">
+                        <div><div style="font-size:10px;color:var(--slate-500)">Počáteční</div><div style="font-size:17px;font-weight:700;color:white">125 000</div></div>
+                        <div><div style="font-size:10px;color:var(--slate-500)">Aktuální</div><div style="font-size:17px;font-weight:700;color:var(--primary-light)">139 340</div></div>
+                        <div><div style="font-size:10px;color:var(--accent-light)">Najeto celkem</div><div style="font-size:17px;font-weight:700;color:var(--accent-light)">14 340</div></div>
+                    </div>
+                </div>
+
+                <div style="background:linear-gradient(135deg,var(--primary),var(--accent));color:white;text-align:center;padding:12px;border-radius:10px;font-weight:600;font-size:13px">✏️ Upravit vozidlo</div>
+            </div>
+        </div>
+    </div>
+
+    <h4>Záložka Jízdy vozidla</h4>
+    <p>Přepnutím na záložku <strong>Jízdy vozidla</strong> zobrazíte chronologický seznam všech jízd daného vozidla. Jízdy jsou řazeny od nejstarších po nejnovější a obsahují datum, čas, trasu, řidiče a vzdálenost.</p>
+
+    <!-- Vehicle trips mock -->
+    <div class="screen-mock" style="max-width:540px;margin:24px auto">
+        <div class="screen-mock-bar">
+            <div class="screen-mock-dot red"></div>
+            <div class="screen-mock-dot yellow"></div>
+            <div class="screen-mock-dot green"></div>
+        </div>
+        <div class="screen-mock-content" style="padding:0">
+            <div class="mock-detail-header" style="padding:16px 20px">
+                <div class="mock-detail-header-left">
+                    <div class="mock-detail-icon"><svg viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.1-3.2C13.1 5.9 12 5 10.7 5H5.2C4 5 2.9 5.9 2.4 6.9L1 10c-1 .5-1 1.1-1 1.7V16c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg></div>
+                    <div>
+                        <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:16px;color:white">VW Passat</div>
+                        <div style="font-size:12px;color:rgba(255,255,255,0.7)">7AV1635</div>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px">
+                    <span class="mock-badge green">Aktivní</span>
+                    <span style="color:rgba(255,255,255,0.6);font-size:18px">✕</span>
+                </div>
+            </div>
+            <div class="mock-detail-tabs">
+                <div class="mock-detail-tab">Detail vozidla</div>
+                <div class="mock-detail-tab active">
+                    <svg style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Jízdy vozidla <span class="count">212</span>
+                </div>
+            </div>
+            <!-- Search bar -->
+            <div style="padding:12px 20px;display:flex;gap:10px">
+                <div style="flex:1;position:relative">
+                    <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;fill:none;stroke:var(--slate-400);stroke-width:2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <div class="mock-input" style="padding-left:32px;font-size:12px;color:var(--slate-500);padding-top:8px;padding-bottom:8px">Hledat...</div>
+                </div>
+                <div class="mock-select" style="width:auto;padding:8px 12px;font-size:11px">--------- ----- ▾</div>
+            </div>
+            <!-- Trip rows -->
+            <div class="mock-trip-row">
+                <div class="mock-trip-date"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 3. 2. 2025 8:55</div>
+                <div class="mock-trip-route"><span class="mock-trip-dot start"></span>Ústí nad Labem → <span class="mock-trip-dot end"></span>Mnichovo Hradiště</div>
+                <div class="mock-trip-driver">👤 Tomáš Lapos</div>
+                <div class="mock-trip-km">🔄 72 km</div>
+            </div>
+            <div class="mock-trip-row">
+                <div class="mock-trip-date"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 3. 2. 2025 14:53</div>
+                <div class="mock-trip-route"><span class="mock-trip-dot start"></span>Mnichovo Hradiště → <span class="mock-trip-dot end"></span>Ústí nad Labem</div>
+                <div class="mock-trip-driver">👤 Tomáš Lapos</div>
+                <div class="mock-trip-km">🔄 72 km</div>
+            </div>
+            <div class="mock-trip-row">
+                <div class="mock-trip-date"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 4. 2. 2025 8:37</div>
+                <div class="mock-trip-route"><span class="mock-trip-dot start"></span>Ústí nad Labem → <span class="mock-trip-dot end"></span>Brandýs nad Labem</div>
+                <div class="mock-trip-driver">👤 Tomáš Lapos</div>
+                <div class="mock-trip-km">🔄 74 km</div>
+            </div>
+            <div class="mock-trip-row">
+                <div class="mock-trip-date"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 4. 2. 2025 13:48</div>
+                <div class="mock-trip-route"><span class="mock-trip-dot start"></span>Brandýs nad Labem → <span class="mock-trip-dot end"></span>Ústí nad Labem</div>
+                <div class="mock-trip-driver">👤 Tomáš Lapos</div>
+                <div class="mock-trip-km">🔄 74 km</div>
+            </div>
+            <div class="mock-trip-row">
+                <div class="mock-trip-date"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 5. 2. 2025 8:51</div>
+                <div class="mock-trip-route"><span class="mock-trip-dot start"></span>Ústí nad Labem → <span class="mock-trip-dot end"></span>Klecany</div>
+                <div class="mock-trip-driver">👤 Tomáš Lapos</div>
+                <div class="mock-trip-km">🔄 72 km</div>
+            </div>
+            <div style="text-align:center;padding:10px;font-size:11px;color:var(--slate-500)">... a dalších 207 jízd</div>
+        </div>
+    </div>
+
+    <div class="info-box tip">
+        <span class="info-box-label">💡 K čemu slouží záložka Jízdy vozidla?</span>
+        Umožňuje rychlý přehled všech cest daného vozidla bez nutnosti přepínat na záložku Cesty a filtrovat. Jízdy lze prohledávat textově (město, řidič) a filtrovat podle měsíce.
+    </div>
+
+    <h3>Přidání nového vozidla</h3>
+    <p>Nové vozidlo přidáte kliknutím na tlačítko <strong>+ Přidat vozidlo</strong>. Ve formuláři vyplňte:</p>
+    <ul>
+        <li><strong>Název vozidla</strong> – značka a model (např. VW Passat)</li>
+        <li><strong>SPZ</strong> – registrační značka</li>
+        <li><strong>Řidič</strong> – přiřazený řidič</li>
+        <li><strong>Středisko</strong> – oddělení ve firmě</li>
+        <li><strong>Vlastnictví</strong> – vlastní / leasing / pronájem</li>
+        <li><strong>Datum pořízení</strong></li>
+        <li><strong>Datum vyřazení</strong> – nepovinné. Vyplňte pouze pokud vozidlo vyřazujete z provozu.</li>
+        <li><strong>Počáteční stav km</strong> – stav tachometru při pořízení vozidla</li>
+    </ul>
+
+    <div class="info-box warning">
+        <span class="info-box-label">⚠️ Počáteční nájezd při založení</span>
+        Pokud přidáváte ojeté vozidlo, je důležité zadat správný <strong>počáteční stav km</strong>. Ten odpovídá stavu tachometru v okamžiku pořízení. Všechny jízdy se budou počítat od tohoto základu. Pokud je to nové auto, zadejte 0 km.
+    </div>
+
+    <h3>Editace vozidla</h3>
+    <p>Existující vozidlo můžete upravit kliknutím na tlačítko <strong>Upravit vozidlo</strong> v jeho detailu. Můžete změnit všechny údaje.</p>
+
+    <h3>Vyřazení vozidla</h3>
+    <p>Pokud firma přestane vozidlo používat, vyřadíte ho vyplněním pole <strong>Datum vyřazení</strong> v editaci vozidla. Po tomto datu se vozidlo zobrazí se štítkem <strong>Vyřazeno</strong>.</p>
+
+    <div class="info-box important">
+        <span class="info-box-label">❗ Vyřazení vozidla</span>
+        Vyřazené vozidlo se nezobrazuje v nabídce při vytváření jízd ani v generátoru. Stávající jízdy zůstanou zachovány. Vyřazení lze kdykoliv zrušit smazáním data vyřazení.
+    </div>
+</div>
+
+<!-- CHAPTER 6 -->
+<div class="chapter" id="ch6">
+    <div class="chapter-header">
+        <span class="chapter-number">Kapitola 6</span>
+        <h2 class="chapter-title">Generátor cest – Automatické generování jízd</h2>
+    </div>
+
+    <p>Záložka <strong>Generátor</strong> je nejsilnější funkce aplikace. Umožňuje automaticky vygenerovat služební jízdy za dané období na základě požadovaného celkového nájezdu.</p>
+
+    <!-- Generator mock -->
+    <div class="screen-mock">
+        <div class="screen-mock-bar">
+            <div class="screen-mock-dot red"></div>
+            <div class="screen-mock-dot yellow"></div>
+            <div class="screen-mock-dot green"></div>
+            <div class="screen-mock-url">https://tomaslapos.github.io/Cestovni_prikazy/</div>
+        </div>
+        <div class="screen-mock-content">
+            <div class="mock-tab-nav">
+                <div class="mock-tab"><svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> Cesty</div>
+                <div class="mock-tab"><svg viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.1-3.2C13.1 5.9 12 5 10.7 5H5.2C4 5 2.9 5.9 2.4 6.9L1 10c-1 .5-1 1.1-1 1.7V16c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg> Vozidla</div>
+                <div class="mock-tab active"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generátor</div>
+            </div>
+
+            <div style="margin-bottom:8px"><h3 style="font-family:'Sora',sans-serif;font-size:20px;color:white;margin:0">Generátor cest</h3></div>
+            <p style="color:var(--slate-400);font-size:13px;margin-bottom:20px">Automatické generování služebních cest podle měsíčního nájezdu</p>
+
+            <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+                <div class="mock-btn primary">+ Nový požadavek</div>
+            </div>
+
+            <!-- Past requests -->
+            <div class="mock-gen-card">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                    <div style="display:flex;align-items:center;gap:12px">
+                        <div class="mock-gen-icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+                        <div>
+                            <div style="font-weight:600;color:white;font-size:14px">7AV1635 – VW Passat</div>
+                            <div style="font-size:12px;color:var(--slate-400)">13.6.2025 – 7.8.2025</div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:20px;font-size:12px">
+                        <div style="text-align:center"><div style="color:var(--slate-500);font-size:10px">Požadovaný nájezd</div><div style="color:white;font-weight:600">2 540 km</div></div>
+                        <div style="text-align:center"><div style="color:var(--slate-500);font-size:10px">Vygenerováno</div><div style="color:var(--primary-light);font-weight:600">2 540 km</div></div>
+                        <div style="text-align:center"><div style="color:var(--slate-500);font-size:10px">Odchylka</div><div style="color:var(--green);font-weight:600">0.0%</div></div>
+                        <span class="mock-badge green">Dokončeno</span>
+                    </div>
+                </div>
+                <div style="font-size:10px;color:var(--slate-500);margin-top:8px">Vygenerováno: 3.3.2026 12:11</div>
+            </div>
+            <div class="mock-gen-card">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                    <div style="display:flex;align-items:center;gap:12px">
+                        <div class="mock-gen-icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+                        <div>
+                            <div style="font-weight:600;color:white;font-size:14px">7AV1635 – VW Passat</div>
+                            <div style="font-size:12px;color:var(--slate-400)">1.5.2025 – 12.6.2025</div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:20px;font-size:12px">
+                        <div style="text-align:center"><div style="color:var(--slate-500);font-size:10px">Požadovaný nájezd</div><div style="color:white;font-weight:600">2 358 km</div></div>
+                        <div style="text-align:center"><div style="color:var(--slate-500);font-size:10px">Vygenerováno</div><div style="color:var(--primary-light);font-weight:600">2 368 km</div></div>
+                        <div style="text-align:center"><div style="color:var(--slate-500);font-size:10px">Odchylka</div><div style="color:var(--green);font-weight:600">0.4%</div></div>
+                        <span class="mock-badge green">Dokončeno</span>
+                    </div>
+                </div>
+                <div style="font-size:10px;color:var(--slate-500);margin-top:8px">Vygenerováno: 3.3.2026 11:32</div>
+            </div>
+        </div>
+    </div>
+
+    <h3>Jak vytvořit nový požadavek</h3>
+    <div class="steps">
+        <div class="step"><div class="step-content"><strong>Klikněte na „+ Nový požadavek"</strong></div></div>
+        <div class="step"><div class="step-content"><strong>Vyberte vozidlo</strong> – zobrazí se aktuální stav tachometru</div></div>
+        <div class="step"><div class="step-content"><strong>Zadejte období</strong> – datum od a do, za které chcete jízdy vygenerovat</div></div>
+        <div class="step"><div class="step-content"><strong>Zadejte cílový stav tachometru</strong> – stav, na který chcete tachometr dostat. Aplikace vypočte potřebný počet km k vygenerování.</div></div>
+        <div class="step"><div class="step-content"><strong>Potvrďte generování</strong> – jízdy se automaticky vytvoří a uloží do databáze. Stav km na vozidle se aktualizuje.</div></div>
+    </div>
+
+    <div class="info-box tip">
+        <span class="info-box-label">💡 Příklad</span>
+        Vozidlo má aktuálně 125 000 km. Chcete, aby na konci měsíce mělo 128 000 km. Zadáte cílový stav 128 000 – generátor automaticky vytvoří cesty dohromady za cca 3 000 km.
+    </div>
+</div>
+
+<!-- CHAPTER 7 -->
+<div class="chapter" id="ch7">
+    <div class="chapter-header">
+        <span class="chapter-number">Kapitola 7</span>
+        <h2 class="chapter-title">Jak funguje generátor – Pravidla a podmínky</h2>
+    </div>
+
+    <p>Generátor nevytváří jízdy náhodně. Řídí se sadou pravidel, aby výsledek vypadal realisticky a odpovídal běžnému vzorci služebních cest.</p>
+
+    <h3>Pravidla generování</h3>
+    <table>
+        <thead><tr><th>Pravidlo</th><th>Popis</th></tr></thead>
+        <tbody>
+            <tr><td><strong>Pouze pracovní dny</strong></td><td>Jízdy se generují jen v pondělí–pátek, nikdy o víkendu ani státním svátku.</td></tr>
+            <tr><td><strong>Čas odjezdu</strong></td><td>Odjezd ráno v rozmezí <strong>7:30 – 9:30</strong>. Čas je náhodný s přirozeným rozptylem.</td></tr>
+            <tr><td><strong>Výchozí bod</strong></td><td>Každá cesta vždy začíná v <strong>Ústí nad Labem</strong>. Zpáteční jízda končí opět v Ústí nad Labem.</td></tr>
+            <tr><td><strong>Vždy tam a zpět</strong></td><td>Každá cesta se generuje jako pár: jízda tam + jízda zpět, obě ve <strong>stejný den</strong>.</td></tr>
+            <tr><td><strong>Přestávka v cíli</strong></td><td>Mezi jízdou tam a zpět je přestávka <strong>1–3 hodiny</strong> (simulace pracovní schůzky v cíli).</td></tr>
+            <tr><td><strong>Mezera mezi dny</strong></td><td>Jízdy se negenerují každý pracovní den. Mezi cestami je náhodná mezera <strong>1–3 pracovní dny</strong>.</td></tr>
+            <tr><td><strong>Cesta do Prahy</strong></td><td>Přibližně co 500 km se automaticky zařadí cesta do Prahy (rovnoměrně rozložená v čase).</td></tr>
+            <tr><td><strong>Vzdálenost destinací</strong></td><td>Generátor vybírá z destinací vzdálených <strong>15–400 km</strong> jednosměrně od Ústí nad Labem (včetně krajských měst jako Brno, Olomouc, Ostrava apod.).</td></tr>
+            <tr><td><strong>Doba jízdy</strong></td><td>Vypočte se z reálných navigačních časů v databázi + náhodný buffer <strong>-5 % až +15 %</strong> (provoz, zdržení, zastávky).</td></tr>
+            <tr><td><strong>Max 1 cesta / den</strong></td><td>Na jeden pracovní den se generuje max jedna cesta (tam + zpět).</td></tr>
+            <tr><td><strong>Pestrost tras</strong></td><td>Generátor vybírá z 5 nejbližších kandidátů k ideální vzdálenosti, aby trasy nebyly monotónní.</td></tr>
+            <tr><td><strong>Doladění km</strong></td><td>Pokud po hlavním generování zbývá víc než 3 % k cíli, generátor doplní cesty na nevyužité pracovní dny.</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Průběh generování</h3>
+    <div class="flow">
+        <div class="flow-step">Aktuální stav km<br><small>125 000 km</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step accent">Cílový stav<br><small>128 000 km</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Potřeba<br><small>3 000 km</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step green">Vygenerované jízdy<br><small>~3 000 km</small></div>
+    </div>
+
+    <div class="info-box warning">
+        <span class="info-box-label">⚠️ Odchylka</span>
+        Generátor se snaží trefit co nejblíže k požadovanému nájezdu, ale může vzniknout malá odchylka (typicky pod 1 %). Důvod: vzdálenosti mezi městy jsou celá čísla a cesty musí končit celým km.
+    </div>
+
+</div>
+
+<!-- CHAPTER 8 -->
+<div class="chapter" id="ch8">
+    <div class="chapter-header">
+        <span class="chapter-number">Kapitola 8</span>
+        <h2 class="chapter-title">Export dat do CSV</h2>
+    </div>
+
+    <p>Na záložce <strong>Cesty</strong> je tlačítko <strong>Export CSV</strong>, které stáhne aktuálně zobrazené (filtrované) jízdy do souboru ve formátu CSV. Soubor je kompatibilní s Microsoft Excel a LibreOffice Calc.</p>
+
+    <h3>Postup exportu</h3>
+    <div class="steps">
+        <div class="step"><div class="step-content"><strong>Nastavte filtry</strong> – vyberte měsíc, rok, vozidlo nebo řidiče.</div></div>
+        <div class="step"><div class="step-content"><strong>Klikněte na „Export CSV"</strong> – soubor se automaticky stáhne.</div></div>
+        <div class="step"><div class="step-content"><strong>Otevřete v Excelu</strong> – soubor obsahuje české znaky (diakritiku) díky kódování UTF-8 s BOM.</div></div>
+    </div>
+
+    <h3>Obsah exportovaného souboru</h3>
+    <table>
+        <thead><tr><th>Sloupec</th><th>Popis</th></tr></thead>
+        <tbody>
+            <tr><td>Datum začátku</td><td>Datum a čas odjezdu</td></tr>
+            <tr><td>Datum konce</td><td>Datum a čas příjezdu</td></tr>
+            <tr><td>Vozidlo</td><td>Název a SPZ vozidla</td></tr>
+            <tr><td>Řidič</td><td>Jméno řidiče</td></tr>
+            <tr><td>Odkud</td><td>Výchozí město</td></tr>
+            <tr><td>Kam</td><td>Cílové město</td></tr>
+            <tr><td>Vzdálenost (km)</td><td>Vzdálenost cesty v km</td></tr>
+            <tr><td>Účel</td><td>Účel cesty</td></tr>
+            <tr><td>Počáteční km</td><td>Stav tachometru na začátku</td></tr>
+            <tr><td>Konečný km</td><td>Stav tachometru na konci</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- CHAPTER 9 -->
+<div class="chapter" id="ch9">
+    <div class="chapter-header">
+        <span class="chapter-number">Kapitola 9</span>
+        <h2 class="chapter-title">Důležité pojmy a automatické chování</h2>
+    </div>
+
+    <h3>Stav tachometru (km)</h3>
+    <p>Každé vozidlo má tři hodnoty kilometrů:</p>
+    <table>
+        <thead><tr><th>Hodnota</th><th>Význam</th></tr></thead>
+        <tbody>
+            <tr><td><strong>Počáteční km</strong></td><td>Stav tachometru při pořízení vozidla. Nastavuje se jednou při přidání.</td></tr>
+            <tr><td><strong>Aktuální km</strong></td><td>Aktuální stav tachometru. Automaticky se zvyšuje s každou jízdou.</td></tr>
+            <tr><td><strong>Najeto celkem</strong></td><td>Rozdíl aktuální − počáteční. Celkový nájezd od založení v systému.</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Automatické aktualizace km</h3>
+    <p>Stav tachometru se automaticky mění v těchto situacích:</p>
+    <table>
+        <thead><tr><th>Akce</th><th>Efekt na km</th></tr></thead>
+        <tbody>
+            <tr><td>Vytvoření jízdy (ruční)</td><td>+ vzdálenost cesty (+ zpáteční, pokud zaškrtnuto)</td></tr>
+            <tr><td>Generování jízd</td><td>+ celkový nájezd všech vygenerovaných cest</td></tr>
+            <tr><td>Smazání jízdy</td><td>− vzdálenost smazané cesty</td></tr>
+            <tr><td>Úprava jízdy</td><td>Přepočte se rozdíl ve vzdálenosti</td></tr>
+        </tbody>
+    </table>
+
+    <div class="info-box success">
+        <span class="info-box-label">✅ Vše je automatické</span>
+        Nemusíte nikdy ručně přepočítávat stav km na vozidle. Aplikace se o vše postará při každé operaci s jízdami.
+    </div>
+
+    <h3>Vzdálenosti mezi městy</h3>
+    <p>Vzdálenosti jsou předem uložené v databázi. Výchozí bod je vždy <strong>Ústí nad Labem</strong>. Vzdálenosti nelze měnit z aplikace – v případě potřeby kontaktujte administrátora.</p>
+</div>
+
+<!-- CHAPTER 10 -->
+<div class="chapter" id="ch10">
+    <div class="chapter-header">
+        <span class="chapter-number">Kapitola 10</span>
+        <h2 class="chapter-title">Časté otázky (FAQ)</h2>
+    </div>
+
+    <h3>Jak změním heslo?</h3>
+    <p>Změna hesla není dostupná z aplikace. Kontaktujte administrátora systému.</p>
+
+    <h3>Mohu smazat všechny vygenerované jízdy najednou?</h3>
+    <p>Momentálně ne. Jízdy je potřeba mazat jednotlivě. V budoucnu se plánuje hromadná správa.</p>
+
+    <h3>Proč mi generátor nevypočte přesný počet km?</h3>
+    <p>Vzdálenosti mezi městy jsou celá čísla, a generátor musí rozdělit nájezd na reálné cesty. Vzniká tak drobná odchylka (typicky do 1 %).</p>
+
+    <h3>Mohu generovat jízdy zpětně?</h3>
+    <p>Ano. Zadejte libovolné datum v minulosti. Generátor správně vyhodnotí pracovní dny a svátky.</p>
+
+    <h3>Co znamená „vyřazené" vozidlo?</h3>
+    <p>Vyřazené vozidlo (má vyplněné Datum vyřazení) se nezobrazuje v nabídkách při vytváření jízd ani v generátoru. Stávající jízdy zůstávají. Vyřazení můžete kdykoliv zrušit smazáním data vyřazení v editaci vozidla.</p>
+
+    <h3>Kde jsou uložena data?</h3>
+    <p>Veškerá data jsou uložena v cloudové databázi. Data jsou dostupná z jakéhokoliv zařízení po přihlášení.</p>
+
+    <h3>Aplikace mi nefunguje / nevidím svá data</h3>
+    <p>Zkontrolujte připojení k internetu. Aplikace vyžaduje aktivní internetové připojení pro komunikaci s databází. Pokud problém přetrvává, kontaktujte administrátora.</p>
+
+    <hr style="margin-top:48px">
+    <div style="text-align:center;color:var(--slate-400);font-size:12px;padding:20px 0">
+        <p><strong>Cestovní příkazy</strong> – Uživatelský manuál v1.0</p>
+        <p>© 2026 GastroTechnoGroup s.r.o. | Vytvořeno pro interní použití</p>
+    </div>
+</div>
+
+</body>
+</html>

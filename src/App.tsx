@@ -5,6 +5,7 @@ import { TabNavigation } from './components/layout/TabNavigation';
 import { TripsPage } from './pages/TripsPage';
 import { VehiclesPage } from './pages/VehiclesPage';
 import { GeneratorPage } from './pages/GeneratorPage';
+import { ManualPage } from './pages/ManualPage';
 import { useAuth } from './hooks/useAuth';
 
 type Tab = 'trips' | 'vehicles' | 'generator';
@@ -12,6 +13,7 @@ type Tab = 'trips' | 'vehicles' | 'generator';
 function App() {
   const { user, loading, error, login, logout, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('trips');
+  const [showManual, setShowManual] = useState(false);
 
   if (loading) {
     return (
@@ -27,7 +29,9 @@ function App() {
 
   return (
     <div className="min-h-screen">
-      <Header user={user!} onLogout={logout} />
+      <Header user={user!} onLogout={logout} onManual={() => setShowManual(true)} />
+
+      {showManual && <ManualPage onClose={() => setShowManual(false)} />}
       <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
       
       <main>

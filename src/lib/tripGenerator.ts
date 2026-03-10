@@ -224,9 +224,9 @@ export function generateTrips(
     return { trips: [], totalGeneratedKm: 0 };
   }
 
-  // Destinace z Ústí nad Labem - krátké/střední (do 150 km jednosměrně)
+  // Destinace z Ústí nad Labem (15–400 km jednosměrně)
   const shortDestinations = distances.filter(
-    (d) => d.start_city === 'Ústí nad Labem' && d.distance_km >= 15 && d.distance_km <= 150
+    (d) => d.start_city === 'Ústí nad Labem' && d.distance_km >= 15 && d.distance_km <= 400
   );
   // Praha specificky pro povinné cesty každých ~500 km
   const pragueTrip = distances.find(
