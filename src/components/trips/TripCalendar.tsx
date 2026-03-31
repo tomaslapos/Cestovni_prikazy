@@ -3,7 +3,7 @@ import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { cs } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Trip } from '../../types';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 const locales = { cs };
 
@@ -18,10 +18,21 @@ const localizer = dateFnsLocalizer({
 interface TripCalendarProps {
   trips: Trip[];
   onTripClick: (trip: Trip) => void;
+  selectedMonth?: number | null;
+  selectedYear?: number | null;
 }
 
-export function TripCalendar({ trips, onTripClick }: TripCalendarProps) {
+export function TripCalendar({ trips, onTripClick, selectedMonth, selectedYear }: TripCalendarProps) {
   const [date, setDate] = useState(new Date());
+
+  // Synchronizovat kalendář s filtrem měsíce/roku
+  useEffect(() => {
+    if (selectedYear && selectedMonth) {
+      setDate(new Date(selectedYear, selectedMonth - 1, 1));
+    } else if (selectedYear) {
+      setDate(new Date(selectedYear, date.getMonth(), 1));
+    }
+  }, [selectedMonth, selectedYear]);
 
   const events = useMemo(() => {
     return trips.map((trip) => ({

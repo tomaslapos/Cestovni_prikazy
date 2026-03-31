@@ -23,7 +23,7 @@ export function TripsPage() {
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
 
   const { trips, loading, fetchTrips, createTrip, updateTrip, deleteTrip } = useTrips();
-  const { vehicles, getVehicleById, updateVehicleKm } = useVehicles();
+  const { vehicles, getVehicleById, updateVehicleKm, recalculateVehicleKm } = useVehicles();
   const { cities, getDistance } = useDistances();
 
   // Apply filters
@@ -83,19 +83,15 @@ export function TripsPage() {
   const handleDeleteTrip = useCallback(async () => {
     if (selectedTrip && window.confirm('Opravdu chcete odstranit tuto jízdu?')) {
       const vehicleId = selectedTrip.vehicle_id;
-      const deletedDistance = selectedTrip.distance;
-      const vehicle = getVehicleById(vehicleId);
 
       await deleteTrip(selectedTrip.id);
 
-      // Aktualizovat stav km na vozidle po smazání cesty
-      if (vehicle && deletedDistance) {
-        await updateVehicleKm(vehicleId, vehicle.current_km - deletedDistance);
-      }
+      // Přepočítat stav km na vozidle z existujících jízd
+      await recalculateVehicleKm(vehicleId);
 
       setSelectedTrip(null);
     }
-  }, [selectedTrip, deleteTrip, getVehicleById, updateVehicleKm]);
+  }, [selectedTrip, deleteTrip, recalculateVehicleKm]);
 
   const handleFormSubmit = useCallback(async (data: TripFormData, createReturnTrip: boolean): Promise<boolean> => {
     const distance = getDistance(data.start_location, data.end_location);
@@ -153,7 +149,7 @@ export function TripsPage() {
       />
 
       {viewMode === 'calendar' ? (
-        <TripCalendar trips={filteredTrips} onTripClick={handleTripClick} />
+        <TripCalendar trips={filteredTrips} onTripClick={handleTripClick} selectedMonth={filters.month} selectedYear={filters.year} />
       ) : (
         <TripList trips={filteredTrips} onTripClick={handleTripClick} loading={loading} />
       )}

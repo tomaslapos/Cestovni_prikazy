@@ -76,6 +76,36 @@ export function useVehicles() {
     }
   }, [fetchVehicles]);
 
+  const recalculateVehicleKm = useCallback(async (id: string) => {
+    try {
+      const vehicle = vehicles.find((v) => v.id === id);
+      if (!vehicle) return false;
+
+      // Sečti vzdálenosti všech existujících jízd vozidla
+      const { data: trips, error: tripsError } = await supabase
+        .from('trips')
+        .select('distance')
+        .eq('vehicle_id', id);
+
+      if (tripsError) throw tripsError;
+
+      const totalDistance = (trips || []).reduce((sum, t) => sum + (t.distance || 0), 0);
+      const correctKm = vehicle.initial_km + totalDistance;
+
+      const { error } = await supabase
+        .from('vehicles')
+        .update({ current_km: correctKm })
+        .eq('id', id);
+
+      if (error) throw error;
+      await fetchVehicles();
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Chyba při přepočtu km');
+      return false;
+    }
+  }, [fetchVehicles, vehicles]);
+
   const createVehicle = useCallback(async (data: VehicleFormData) => {
     try {
       const { error } = await supabase
@@ -103,6 +133,7 @@ export function useVehicles() {
     getVehicleById,
     updateVehicle,
     updateVehicleKm,
+    recalculateVehicleKm,
     createVehicle,
   };
 }

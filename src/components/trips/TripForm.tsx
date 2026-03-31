@@ -131,12 +131,16 @@ export function TripForm({
                 value={formData.start_date}
                 onChange={(e) => {
                   const val = e.target.value;
-                  setFormData((prev) => ({
-                    ...prev,
-                    start_date: val,
-                    // Auto-fill end_date with same date + 11:00 if not yet set
-                    ...(val && !prev.end_date ? { end_date: val.slice(0, 10) + 'T11:00' } : {}),
-                  }));
+                  const newDay = val.slice(0, 10);
+                  setFormData((prev) => {
+                    // Vždy synchronizovat den konce s dnem začátku
+                    const prevEndTime = prev.end_date ? prev.end_date.slice(11, 16) : '11:00';
+                    return {
+                      ...prev,
+                      start_date: val,
+                      end_date: newDay ? `${newDay}T${prevEndTime}` : prev.end_date,
+                    };
+                  });
                 }}
                 className="w-full bg-slate-800/50 border border-slate-600 rounded-xl py-2.5 px-3 text-white focus:border-primary-500"
                 required
@@ -150,7 +154,18 @@ export function TripForm({
               <input
                 type="datetime-local"
                 value={formData.end_date}
-                onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const startDay = formData.start_date.slice(0, 10);
+                  // Povolit pouze stejný den jako start_date
+                  if (startDay && val.slice(0, 10) !== startDay) {
+                    setFormData({ ...formData, end_date: `${startDay}T${val.slice(11, 16)}` });
+                  } else {
+                    setFormData({ ...formData, end_date: val });
+                  }
+                }}
+                min={formData.start_date ? `${formData.start_date.slice(0, 10)}T00:00` : undefined}
+                max={formData.start_date ? `${formData.start_date.slice(0, 10)}T23:59` : undefined}
                 className="w-full bg-slate-800/50 border border-slate-600 rounded-xl py-2.5 px-3 text-white focus:border-primary-500"
                 required
               />

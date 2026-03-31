@@ -63,7 +63,7 @@ export function useGenerator() {
 
   const getLastDateForVehicle = useCallback(async (vehicleId: string): Promise<string | null> => {
     try {
-      // Check last trip end_date for this vehicle
+      // Pouze z reálně existujících jízd v DB (ne z generator_requests)
       const { data: tripData } = await supabase
         .from('trips')
         .select('end_date')
@@ -71,29 +71,10 @@ export function useGenerator() {
         .order('end_date', { ascending: false })
         .limit(1);
 
-      // Check last generator_request date_to for this vehicle
-      const { data: genData } = await supabase
-        .from('generator_requests')
-        .select('date_to')
-        .eq('vehicle_id', vehicleId)
-        .order('date_to', { ascending: false })
-        .limit(1);
+      if (!tripData || tripData.length === 0) return null;
 
-      const dates: Date[] = [];
-
-      if (tripData && tripData.length > 0) {
-        dates.push(new Date(tripData[0].end_date));
-      }
-
-      if (genData && genData.length > 0) {
-        dates.push(new Date(genData[0].date_to));
-      }
-
-      if (dates.length === 0) return null;
-
-      // Return the latest date
-      const latest = dates.sort((a, b) => b.getTime() - a.getTime())[0];
-      // Return date as YYYY-MM-DD (next day after last record)
+      // Return date as YYYY-MM-DD (next day after last trip)
+      const latest = new Date(tripData[0].end_date);
       const nextDay = new Date(latest);
       nextDay.setDate(nextDay.getDate() + 1);
       return nextDay.toISOString().split('T')[0];
