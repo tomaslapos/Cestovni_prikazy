@@ -23,7 +23,7 @@ export function TripsPage() {
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
 
   const { trips, loading, fetchTrips, createTrip, updateTrip, deleteTrip } = useTrips();
-  const { vehicles, getVehicleById, updateVehicleKm, recalculateVehicleKm } = useVehicles();
+  const { vehicles, getVehicleById, recalculateVehicleKm } = useVehicles();
   const { cities, getDistance } = useDistances();
 
   // Apply filters
@@ -105,30 +105,18 @@ export function TripsPage() {
     let success: boolean;
     if (editingTrip) {
       success = await updateTrip(editingTrip.id, data, startKm, distance);
-      if (success) {
-        // Aktualizovat km: odečíst starou vzdálenost, přičíst novou
-        const oldDistance = editingTrip.distance || 0;
-        const kmDiff = distance - oldDistance;
-        if (kmDiff !== 0) {
-          await updateVehicleKm(data.vehicle_id, vehicle.current_km + kmDiff);
-        }
-      }
     } else {
       success = await createTrip(data, startKm, distance, createReturnTrip);
-      if (success) {
-        // Update vehicle's current km (double if return trip created)
-        const totalDistance = createReturnTrip ? distance * 2 : distance;
-        await updateVehicleKm(data.vehicle_id, startKm + totalDistance);
-      }
     }
 
     if (success) {
+      await recalculateVehicleKm(data.vehicle_id);
       setShowForm(false);
       setEditingTrip(null);
     }
 
     return success;
-  }, [editingTrip, getDistance, getVehicleById, createTrip, updateTrip, updateVehicleKm]);
+  }, [editingTrip, getDistance, getVehicleById, createTrip, updateTrip, recalculateVehicleKm]);
 
   const getVehicleCurrentKm = useCallback((vehicleId: string): number => {
     const vehicle = getVehicleById(vehicleId);

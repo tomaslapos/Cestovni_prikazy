@@ -17,7 +17,7 @@ interface NewRequest {
 }
 
 export function GeneratorPage() {
-  const { vehicles, updateVehicleKm } = useVehicles();
+  const { vehicles, recalculateVehicleKm } = useVehicles();
   const { distances } = useDistances();
   const { requests, loading, createRequest, getLastDateForVehicle, fetchRequests } = useGenerator();
 
@@ -162,9 +162,8 @@ export function GeneratorPage() {
         if (error) throw error;
       }
 
-      // Update vehicle current_km
-      const lastTrip = result.trips[result.trips.length - 1];
-      await updateVehicleKm(vehicle.id, lastTrip.end_km);
+      // Přepočítat current_km z existujících jízd v DB
+      await recalculateVehicleKm(vehicle.id);
 
       // Save generator request record
       await createRequest(
@@ -191,7 +190,7 @@ export function GeneratorPage() {
     } finally {
       setGenerating(false);
     }
-  }, [newRequest, vehicles, distances, updateVehicleKm, createRequest, fetchRequests]);
+  }, [newRequest, vehicles, distances, recalculateVehicleKm, createRequest, fetchRequests]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

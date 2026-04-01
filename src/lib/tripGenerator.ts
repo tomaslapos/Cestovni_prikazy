@@ -253,8 +253,9 @@ export function generateTrips(
   const kmFromPrague = pragueTripsCount * pragueRoundTrip;
   const remainingKm = targetTotalKm - kmFromPrague;
   
-  // Průměrná kratší cesta tam a zpět ~60-120 km
-  const avgShortRoundTrip = 90;
+  // Průměrná kratší cesta tam a zpět – vypočítej z reálných destinací
+  const avgShortOneWay = shortDestinations.reduce((sum, d) => sum + d.distance_km, 0) / shortDestinations.length;
+  const avgShortRoundTrip = Math.round(avgShortOneWay * 2);
   const shortTripsNeeded = Math.max(0, Math.ceil(remainingKm / avgShortRoundTrip));
   
   const totalTripsNeeded = pragueTripsCount + shortTripsNeeded;
@@ -324,25 +325,33 @@ export function generateTrips(
     totalKm += chosen.distance_km * 2;
   }
 
-  // Doladění: pokud jsme daleko od cíle, přidej cesty na nevyužité dny
+  // Doladění: pokud jsme daleko od cíle, přidej cesty na nevyužité dny (s rozestupy)
   if (totalKm < targetTotalKm * 0.97) {
     const usedDays = new Set(selectedDays.map((d) => formatDate(d)));
     const unusedWorkdays = workdays.filter((d) => !usedDays.has(formatDate(d)));
     
-    for (const day of unusedWorkdays) {
+    // I při dolaďování zachovat rozestupy – přidávat ob 1-2 dny
+    let unusedIdx = 0;
+    while (unusedIdx < unusedWorkdays.length) {
       const remaining = targetTotalKm - totalKm;
       if (remaining <= 5) break;
       if (totalKm >= targetTotalKm * 0.97) break;
 
+      const day = unusedWorkdays[unusedIdx];
       const targetOneWay = Math.max(15, remaining / 2);
       const sorted = [...shortDestinations].sort(
         (a, b) => Math.abs(a.distance_km - targetOneWay) - Math.abs(b.distance_km - targetOneWay)
       );
-      const chosen = sorted[0];
+      const candidates = sorted.slice(0, Math.min(3, sorted.length));
+      const chosen = candidates[randomBetween(0, candidates.length - 1)];
 
       const tripPair = createTripPair(vehicleId, driverName, day, chosen);
       trips.push(...tripPair);
       totalKm += chosen.distance_km * 2;
+
+      // Přeskoč 1-2 nevyužité dny
+      const skip = randomBetween(1, 2);
+      unusedIdx += 1 + skip;
     }
   }
 

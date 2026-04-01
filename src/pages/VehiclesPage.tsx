@@ -16,7 +16,7 @@ export function VehiclesPage() {
   const [showTripForm, setShowTripForm] = useState(false);
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
 
-  const { vehicles, loading, updateVehicle, getVehicleById, updateVehicleKm, createVehicle } = useVehicles();
+  const { vehicles, loading, updateVehicle, getVehicleById, recalculateVehicleKm, createVehicle } = useVehicles();
   const [showVehicleForm, setShowVehicleForm] = useState(false);
   const { 
     trips: vehicleTrips, 
@@ -60,11 +60,13 @@ export function VehiclesPage() {
 
   const handleDeleteTrip = useCallback(async () => {
     if (selectedTrip && window.confirm('Opravdu chcete odstranit tuto jízdu?')) {
+      const vehicleId = selectedTrip.vehicle_id;
       await deleteTrip(selectedTrip.id);
+      await recalculateVehicleKm(vehicleId);
       setSelectedTrip(null);
       fetchTrips();
     }
-  }, [selectedTrip, deleteTrip, fetchTrips]);
+  }, [selectedTrip, deleteTrip, recalculateVehicleKm, fetchTrips]);
 
   const handleFormSubmit = useCallback(async (data: TripFormData): Promise<boolean> => {
     const distance = getDistance(data.start_location, data.end_location);
@@ -80,19 +82,17 @@ export function VehiclesPage() {
       success = await updateTrip(editingTrip.id, data, startKm, distance);
     } else {
       success = await createTrip(data, startKm, distance);
-      if (success) {
-        await updateVehicleKm(data.vehicle_id, startKm + distance);
-      }
     }
 
     if (success) {
+      await recalculateVehicleKm(data.vehicle_id);
       setShowTripForm(false);
       setEditingTrip(null);
       fetchTrips();
     }
 
     return success;
-  }, [editingTrip, getDistance, getVehicleById, createTrip, updateTrip, updateVehicleKm, fetchTrips]);
+  }, [editingTrip, getDistance, getVehicleById, createTrip, updateTrip, recalculateVehicleKm, fetchTrips]);
 
   const getVehicleCurrentKm = useCallback((vehicleId: string): number => {
     const vehicle = getVehicleById(vehicleId);
