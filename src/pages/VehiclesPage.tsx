@@ -39,12 +39,13 @@ export function VehiclesPage() {
     if (!selectedVehicle) return false;
     const success = await updateVehicle(selectedVehicle.id, data);
     if (success) {
-      // Refresh selected vehicle data
+      // Přepočítat current_km (initial_km se mohlo změnit)
+      await recalculateVehicleKm(selectedVehicle.id);
       const updated = getVehicleById(selectedVehicle.id);
       if (updated) setSelectedVehicle(updated);
     }
     return success;
-  }, [selectedVehicle, updateVehicle, getVehicleById]);
+  }, [selectedVehicle, updateVehicle, recalculateVehicleKm, getVehicleById]);
 
   const handleTripClick = useCallback((trip: Trip) => {
     setSelectedTrip(trip);
