@@ -263,16 +263,27 @@ export function generateTrips(
   const periodMonths = Math.max(1, Math.round(periodDays / 30));
   const monthlyKm = targetTotalKm / periodMonths;
 
-  // --- 2. Povinné cesty: Praha 2×/měsíc, Brno a Ostrava 1×/měsíc při ≥3000 km ---
+  // --- 2. Povinné cesty: Praha 2×/měsíc při ≥500 km/měsíc, Brno a Ostrava 1×/měsíc při ≥2200 km ---
   const forcedList: Distance[] = [];
-  if (pragueTrip) {
+  if (pragueTrip && monthlyKm >= 500) {
     for (let i = 0; i < periodMonths * 2; i++) forcedList.push(pragueTrip);
   }
-  if (brnoTrip && monthlyKm >= 3000) {
+  if (brnoTrip && monthlyKm >= 2200) {
     for (let i = 0; i < periodMonths; i++) forcedList.push(brnoTrip);
   }
-  if (ostravaTrip && monthlyKm >= 3000) {
+  if (ostravaTrip && monthlyKm >= 2200) {
     for (let i = 0; i < periodMonths; i++) forcedList.push(ostravaTrip);
+  }
+
+  // Ořež forced list, aby nepřesáhl 80% cílového km (zbytek pro běžné jízdy)
+  const maxForcedKm = targetTotalKm * 0.8;
+  let forcedKmSum = 0;
+  const trimmedForced: Distance[] = [];
+  for (const f of shuffle(forcedList)) {
+    if (forcedKmSum + f.distance_km * 2 <= maxForcedKm) {
+      trimmedForced.push(f);
+      forcedKmSum += f.distance_km * 2;
+    }
   }
 
   // Vyloučit Praha/Brno/Ostrava z běžného poolu (ty jsou v povinných)
@@ -281,14 +292,14 @@ export function generateTrips(
   const destPool = regularPool.length >= 5 ? regularPool : allDestinations;
 
   // --- 3. Spočítej potřebný počet jízd ---
-  const kmFromForced = forcedList.reduce((sum, d) => sum + d.distance_km * 2, 0);
+  const kmFromForced = trimmedForced.reduce((sum, d) => sum + d.distance_km * 2, 0);
   const remainingKm = Math.max(0, targetTotalKm - kmFromForced);
   // Průměr round-trip z CELÉHO poolu (reálný průměr toho co vybíráme)
   const avgRoundTrip = Math.round(
     (destPool.reduce((sum, d) => sum + d.distance_km, 0) / destPool.length) * 2
   );
   const regularTripsNeeded = Math.max(0, Math.ceil(remainingKm / avgRoundTrip));
-  const totalTripsNeeded = forcedList.length + regularTripsNeeded;
+  const totalTripsNeeded = trimmedForced.length + regularTripsNeeded;
 
   // --- 4. Rozlož jízdy rovnoměrně přes celé období ---
   // Vyber totalTripsNeeded indexů rovnoměrně rozložených přes workdays s jitterem
@@ -316,9 +327,9 @@ export function generateTrips(
 
   // --- 5. Přiřaď povinné cesty rovnoměrně přes vybrané dny ---
   const forcedIndices = new Map<number, Distance>();
-  if (forcedList.length > 0 && selectedDays.length > 0) {
-    const spacing = Math.max(1, Math.floor(selectedDays.length / (forcedList.length + 1)));
-    const shuffledForced = shuffle(forcedList);
+  if (trimmedForced.length > 0 && selectedDays.length > 0) {
+    const spacing = Math.max(1, Math.floor(selectedDays.length / (trimmedForced.length + 1)));
+    const shuffledForced = shuffle(trimmedForced);
     for (let p = 0; p < shuffledForced.length; p++) {
       const idx = Math.min(spacing * (p + 1), selectedDays.length - 1);
       let finalIdx = idx;
@@ -330,7 +341,7 @@ export function generateTrips(
   }
 
   // --- 6. Spočítej ideální round-trip pro běžné jízdy ---
-  const regularDays = Math.max(1, selectedDays.length - forcedList.length);
+  const regularDays = Math.max(1, selectedDays.length - trimmedForced.length);
   const idealOneWay = Math.round(remainingKm / regularDays / 2);
   // Vyber destinace blízké ideálu (±40%), fallback na celý pool
   const nearDest = destPool.filter(
