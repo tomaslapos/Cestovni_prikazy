@@ -209,6 +209,16 @@ function createTripPair(
   ];
 }
 
+// Zamíchej pole (Fisher-Yates shuffle)
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = randomBetween(0, i);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export function generateTrips(
   vehicleId: string,
   driverName: string,
@@ -219,66 +229,72 @@ export function generateTrips(
   distances: Distance[]
 ): GenerationResult {
   const workdays = getWorkdays(dateFrom, dateTo);
-  
+
   if (workdays.length === 0) {
     return { trips: [], totalGeneratedKm: 0 };
   }
 
   // Destinace z Ústí nad Labem (15–400 km jednosměrně)
-  const shortDestinations = distances.filter(
+  const allDestinations = distances.filter(
     (d) => d.start_city === 'Ústí nad Labem' && d.distance_km >= 15 && d.distance_km <= 400
   );
-  // Praha specificky pro povinné cesty každých ~500 km
-  const pragueTrip = distances.find(
-    (d) => d.start_city === 'Ústí nad Labem' && d.end_city === 'Praha'
-  );
 
-  if (shortDestinations.length === 0) {
+  if (allDestinations.length === 0) {
     return { trips: [], totalGeneratedKm: 0 };
   }
 
-  const targetTotalKm = targetKm;
-  const trips: GeneratedTrip[] = [];
-  let totalKm = 0;
-
-  // Spočítej měsíční nájezd pro rozhodnutí o Brnu/Ostravě
-  const periodDays = Math.max(1, Math.round((dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24)));
-  const periodMonths = Math.max(1, Math.round(periodDays / 30));
-  const monthlyKm = targetTotalKm / periodMonths;
-
-  // Brno a Ostrava 1× měsíčně při nájezdu >= 3000 km/měsíc
+  // Pojmenované destinace
+  const pragueTrip = distances.find(
+    (d) => d.start_city === 'Ústí nad Labem' && d.end_city === 'Praha'
+  );
   const brnoTrip = distances.find(
     (d) => d.start_city === 'Ústí nad Labem' && d.end_city === 'Brno'
   );
   const ostravaTrip = distances.find(
     (d) => d.start_city === 'Ústí nad Labem' && d.end_city === 'Ostrava'
   );
-  const brnoTripsCount = (monthlyKm >= 3000 && brnoTrip) ? periodMonths : 0;
-  const ostravaTripsCount = (monthlyKm >= 3000 && ostravaTrip) ? periodMonths : 0;
 
-  // Praha každých ~500 km
-  const pragueRoundTrip = pragueTrip ? pragueTrip.distance_km * 2 : 186;
-  const pragueTripsCount = Math.max(0, Math.floor(targetTotalKm / 500));
+  const targetTotalKm = targetKm;
+  const trips: GeneratedTrip[] = [];
+  let totalKm = 0;
+
+  // --- 1. Spočítej období v měsících ---
+  const periodDays = Math.max(1, Math.round((dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24)));
+  const periodMonths = Math.max(1, Math.round(periodDays / 30));
+  const monthlyKm = targetTotalKm / periodMonths;
+
+  // --- 2. Povinné cesty: Praha 2×/měsíc, Brno a Ostrava 1×/měsíc při ≥3000 km ---
+  const forcedList: Distance[] = [];
+  if (pragueTrip) {
+    for (let i = 0; i < periodMonths * 2; i++) forcedList.push(pragueTrip);
+  }
+  if (brnoTrip && monthlyKm >= 3000) {
+    for (let i = 0; i < periodMonths; i++) forcedList.push(brnoTrip);
+  }
+  if (ostravaTrip && monthlyKm >= 3000) {
+    for (let i = 0; i < periodMonths; i++) forcedList.push(ostravaTrip);
+  }
 
   // Km z povinných cest
-  const kmFromPrague = pragueTripsCount * pragueRoundTrip;
-  const kmFromBrno = brnoTripsCount * (brnoTrip ? brnoTrip.distance_km * 2 : 0);
-  const kmFromOstrava = ostravaTripsCount * (ostravaTrip ? ostravaTrip.distance_km * 2 : 0);
-  const remainingKm = targetTotalKm - kmFromPrague - kmFromBrno - kmFromOstrava;
+  const kmFromForced = forcedList.reduce((sum, d) => sum + d.distance_km * 2, 0);
+  const remainingKm = Math.max(0, targetTotalKm - kmFromForced);
 
-  // Průměrná cesta tam a zpět – z reálných destinací
-  const avgShortOneWay = shortDestinations.reduce((sum, d) => sum + d.distance_km, 0) / shortDestinations.length;
-  const avgShortRoundTrip = Math.round(avgShortOneWay * 2);
-  const shortTripsNeeded = Math.max(0, Math.ceil(remainingKm / avgShortRoundTrip));
+  // --- 3. Odhadni potřebný počet běžných jízd ---
+  // Průměrná round-trip z destinací, ale max 200 km (preferovat kratší/střední)
+  const medianDestinations = allDestinations.filter((d) => d.distance_km <= 200);
+  const avgPool = medianDestinations.length > 0 ? medianDestinations : allDestinations;
+  const avgRoundTrip = Math.round(
+    (avgPool.reduce((sum, d) => sum + d.distance_km, 0) / avgPool.length) * 2
+  );
+  const regularTripsNeeded = Math.max(0, Math.ceil(remainingKm / avgRoundTrip));
 
-  const totalTripsNeeded = pragueTripsCount + brnoTripsCount + ostravaTripsCount + shortTripsNeeded;
+  const totalTripsNeeded = forcedList.length + regularTripsNeeded;
 
-  // Vyber pracovní dny s rozestupy (ob 2-3 dny)
+  // --- 4. Vyber pracovní dny s rozestupy (ob 1-3 dny) ---
   const selectedDays: Date[] = [];
   let dayIndex = 0;
   while (selectedDays.length < totalTripsNeeded && dayIndex < workdays.length) {
     selectedDays.push(workdays[dayIndex]);
-    // Přeskoč 1-3 pracovní dny (= cesty ob den až ob tři dny)
     const skip = randomBetween(1, 3);
     dayIndex += 1 + skip;
   }
@@ -296,24 +312,32 @@ export function generateTrips(
     selectedDays.sort((a, b) => a.getTime() - b.getTime());
   }
 
-  // Rozvrh: rovnoměrně rozlož povinné cesty (Praha, Brno, Ostrava)
-  const forcedTrips = new Map<number, Distance>(); // index → destinace
-  const totalForced = pragueTripsCount + brnoTripsCount + ostravaTripsCount;
-  if (totalForced > 0 && selectedDays.length > 0) {
-    // Sestav seznam povinných cest
-    const forcedList: Distance[] = [];
-    for (let i = 0; i < pragueTripsCount; i++) { if (pragueTrip) forcedList.push(pragueTrip); }
-    for (let i = 0; i < brnoTripsCount; i++) { if (brnoTrip) forcedList.push(brnoTrip); }
-    for (let i = 0; i < ostravaTripsCount; i++) { if (ostravaTrip) forcedList.push(ostravaTrip); }
-    // Rovnoměrně rozlož
-    const spacing = Math.floor(selectedDays.length / (forcedList.length + 1));
-    for (let p = 0; p < forcedList.length; p++) {
+  // --- 5. Přiřaď povinné cesty rovnoměrně ---
+  const forcedIndices = new Map<number, Distance>();
+  if (forcedList.length > 0 && selectedDays.length > 0) {
+    const spacing = Math.max(1, Math.floor(selectedDays.length / (forcedList.length + 1)));
+    // Zamíchej povinné cesty, aby Praha/Brno/Ostrava nebyly za sebou
+    const shuffledForced = shuffle(forcedList);
+    for (let p = 0; p < shuffledForced.length; p++) {
       const idx = Math.min(spacing * (p + 1), selectedDays.length - 1);
-      forcedTrips.set(idx, forcedList[p]);
+      // Najdi nejbližší volný index
+      let finalIdx = idx;
+      while (forcedIndices.has(finalIdx) && finalIdx < selectedDays.length - 1) finalIdx++;
+      if (!forcedIndices.has(finalIdx)) {
+        forcedIndices.set(finalIdx, shuffledForced[p]);
+      }
     }
   }
 
-  // Generuj cesty
+  // --- 6. Připrav náhodné destinace bez opakování za sebou ---
+  // Vyloučit Praha/Brno/Ostrava z běžného poolu (ty jsou v povinných)
+  const forcedCities = new Set(['Praha', 'Brno', 'Ostrava']);
+  const regularPool = allDestinations.filter((d) => !forcedCities.has(d.end_city));
+  // Pokud by byl pool prázdný, použij všechny
+  const destPool = regularPool.length >= 5 ? regularPool : allDestinations;
+
+  // --- 7. Generuj cesty ---
+  let lastCity = '';
   for (let i = 0; i < selectedDays.length; i++) {
     const remaining = targetTotalKm - totalKm;
     if (remaining <= 5) break;
@@ -321,49 +345,54 @@ export function generateTrips(
     const day = selectedDays[i];
     let chosen: Distance;
 
-    if (forcedTrips.has(i)) {
-      // Povinná cesta (Praha/Brno/Ostrava)
-      chosen = forcedTrips.get(i)!;
+    if (forcedIndices.has(i)) {
+      chosen = forcedIndices.get(i)!;
     } else {
-      // Náhodně vyber ze VŠECH dostupných destinací
-      chosen = shortDestinations[randomBetween(0, shortDestinations.length - 1)];
+      // Vyber náhodně, ale ne stejný cíl jako minule
+      let attempts = 0;
+      do {
+        chosen = destPool[randomBetween(0, destPool.length - 1)];
+        attempts++;
+      } while (chosen.end_city === lastCity && attempts < 10);
     }
 
+    lastCity = chosen.end_city;
     const tripPair = createTripPair(vehicleId, driverName, day, chosen);
     trips.push(...tripPair);
     totalKm += chosen.distance_km * 2;
   }
 
-  // Doladění: pokud jsme daleko od cíle, přidej cesty na nevyužité dny (s rozestupy)
+  // --- 8. Doladění: doplnit km na nevyužité dny (s rozestupy) ---
   if (totalKm < targetTotalKm * 0.97) {
-    const usedDays = new Set(selectedDays.map((d) => formatDate(d)));
+    const usedDays = new Set(trips.map((t) => t.start_date.slice(0, 10)));
     const unusedWorkdays = workdays.filter((d) => !usedDays.has(formatDate(d)));
-    
-    // I při dolaďování zachovat rozestupy – přidávat ob 1-2 dny
+
     let unusedIdx = 0;
     while (unusedIdx < unusedWorkdays.length) {
       const remaining = targetTotalKm - totalKm;
-      if (remaining <= 5) break;
-      if (totalKm >= targetTotalKm * 0.97) break;
+      if (remaining <= 5 || totalKm >= targetTotalKm * 0.97) break;
 
       const day = unusedWorkdays[unusedIdx];
-      // Náhodně vyber ze všech destinací
-      const chosen = shortDestinations[randomBetween(0, shortDestinations.length - 1)];
+      let chosen: Distance;
+      let attempts = 0;
+      do {
+        chosen = destPool[randomBetween(0, destPool.length - 1)];
+        attempts++;
+      } while (chosen.end_city === lastCity && attempts < 10);
 
+      lastCity = chosen.end_city;
       const tripPair = createTripPair(vehicleId, driverName, day, chosen);
       trips.push(...tripPair);
       totalKm += chosen.distance_km * 2;
 
-      // Přeskoč 1-2 nevyužité dny
       const skip = randomBetween(1, 2);
       unusedIdx += 1 + skip;
     }
   }
 
-  // Seřaď všechny cesty chronologicky
+  // --- 9. Seřaď chronologicky a přepočítej km ---
   trips.sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
 
-  // Přepočítej km (running odometer)
   let km = currentVehicleKm;
   for (const trip of trips) {
     trip.start_km = km;
