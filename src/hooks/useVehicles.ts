@@ -87,20 +87,44 @@ export function useVehicles() {
 
       if (vehicleError || !vehicleData) throw vehicleError || new Error('Vozidlo nenalezeno');
 
-      // Sečti vzdálenosti všech existujících jízd vozidla
-      const { data: trips, error: tripsError } = await supabase
-        .from('trips')
-        .select('distance')
-        .eq('vehicle_id', id);
+      // Sečti vzdálenosti VŠECH existujících jízd vozidla (paginace po 1000)
+      let totalDistance = 0;
+      let totalTrips = 0;
+      let lastTripDate: string | null = null;
+      let from = 0;
+      const pageSize = 1000;
 
-      if (tripsError) throw tripsError;
+      while (true) {
+        const { data: trips, error: tripsError } = await supabase
+          .from('trips')
+          .select('distance, end_date')
+          .eq('vehicle_id', id)
+          .order('end_date', { ascending: false })
+          .range(from, from + pageSize - 1);
 
-      const totalDistance = (trips || []).reduce((sum, t) => sum + (t.distance || 0), 0);
+        if (tripsError) throw tripsError;
+        if (!trips || trips.length === 0) break;
+
+        // Poslední datum = první řádek první stránky (řazeno DESC)
+        if (from === 0 && trips.length > 0) {
+          lastTripDate = trips[0].end_date;
+        }
+
+        totalDistance += trips.reduce((sum, t) => sum + (t.distance || 0), 0);
+        totalTrips += trips.length;
+        if (trips.length < pageSize) break;
+        from += pageSize;
+      }
+
       const correctKm = vehicleData.initial_km + totalDistance;
 
       const { error } = await supabase
         .from('vehicles')
-        .update({ current_km: correctKm })
+        .update({
+          current_km: correctKm,
+          total_trips: totalTrips,
+          last_trip_date: lastTripDate,
+        })
         .eq('id', id);
 
       if (error) throw error;

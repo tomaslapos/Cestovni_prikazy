@@ -15,6 +15,8 @@ export interface Vehicle {
   disposal_date: string | null;
   initial_km: number;
   current_km: number;
+  total_trips: number;
+  last_trip_date: string | null;
   created_at: string;
 }
 

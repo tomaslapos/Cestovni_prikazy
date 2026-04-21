@@ -63,18 +63,17 @@ export function useGenerator() {
 
   const getLastDateForVehicle = useCallback(async (vehicleId: string): Promise<string | null> => {
     try {
-      // Pouze z reálně existujících jízd v DB (ne z generator_requests)
-      const { data: tripData } = await supabase
-        .from('trips')
-        .select('end_date')
-        .eq('vehicle_id', vehicleId)
-        .order('end_date', { ascending: false })
-        .limit(1);
+      // Číst z cache sloupce last_trip_date na vehicles (aktualizováno při každé změně jízd)
+      const { data: vehicle } = await supabase
+        .from('vehicles')
+        .select('last_trip_date')
+        .eq('id', vehicleId)
+        .single();
 
-      if (!tripData || tripData.length === 0) return null;
+      if (!vehicle?.last_trip_date) return null;
 
       // Return date as YYYY-MM-DD (next day after last trip)
-      const latest = new Date(tripData[0].end_date);
+      const latest = new Date(vehicle.last_trip_date);
       const nextDay = new Date(latest);
       nextDay.setDate(nextDay.getDate() + 1);
       return nextDay.toISOString().split('T')[0];

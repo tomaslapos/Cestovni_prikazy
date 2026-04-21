@@ -12,44 +12,58 @@ export function useTrips(vehicleId?: string) {
     setError(null);
 
     try {
-      let query = supabase
-        .from('trips')
-        .select(`
-          *,
-          vehicle:vehicles(*)
-        `)
-        .order('start_date', { ascending: false });
+      // Načti VŠECHNY jízdy pomocí paginace (Supabase limit = 1000)
+      let allTrips: Trip[] = [];
+      let from = 0;
+      const pageSize = 1000;
 
-      if (vehicleId) {
-        query = query.eq('vehicle_id', vehicleId);
+      while (true) {
+        let query = supabase
+          .from('trips')
+          .select(`
+            *,
+            vehicle:vehicles(*)
+          `)
+          .order('start_date', { ascending: false })
+          .range(from, from + pageSize - 1);
+
+        if (vehicleId) {
+          query = query.eq('vehicle_id', vehicleId);
+        }
+
+        if (filters) {
+          if (filters.vehicle_id) {
+            query = query.eq('vehicle_id', filters.vehicle_id);
+          }
+          if (filters.driver_name) {
+            query = query.eq('driver_name', filters.driver_name);
+          }
+          if (filters.year && filters.month) {
+            const startDate = new Date(filters.year, filters.month - 1, 1);
+            const endDate = new Date(filters.year, filters.month, 0, 23, 59, 59);
+            query = query
+              .gte('start_date', startDate.toISOString())
+              .lte('start_date', endDate.toISOString());
+          } else if (filters.year) {
+            const startDate = new Date(filters.year, 0, 1);
+            const endDate = new Date(filters.year, 11, 31, 23, 59, 59);
+            query = query
+              .gte('start_date', startDate.toISOString())
+              .lte('start_date', endDate.toISOString());
+          }
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+
+        allTrips = allTrips.concat(data);
+        if (data.length < pageSize) break;
+        from += pageSize;
       }
 
-      if (filters) {
-        if (filters.vehicle_id) {
-          query = query.eq('vehicle_id', filters.vehicle_id);
-        }
-        if (filters.driver_name) {
-          query = query.eq('driver_name', filters.driver_name);
-        }
-        if (filters.year && filters.month) {
-          const startDate = new Date(filters.year, filters.month - 1, 1);
-          const endDate = new Date(filters.year, filters.month, 0, 23, 59, 59);
-          query = query
-            .gte('start_date', startDate.toISOString())
-            .lte('start_date', endDate.toISOString());
-        } else if (filters.year) {
-          const startDate = new Date(filters.year, 0, 1);
-          const endDate = new Date(filters.year, 11, 31, 23, 59, 59);
-          query = query
-            .gte('start_date', startDate.toISOString())
-            .lte('start_date', endDate.toISOString());
-        }
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setTrips(data || []);
+      setTrips(allTrips);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Chyba při načítání jízd');
     } finally {
