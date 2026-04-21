@@ -275,52 +275,52 @@ export function generateTrips(
     for (let i = 0; i < periodMonths; i++) forcedList.push(ostravaTrip);
   }
 
-  // Km z povinných cest
+  // Vyloučit Praha/Brno/Ostrava z běžného poolu (ty jsou v povinných)
+  const forcedCities = new Set(['Praha', 'Brno', 'Ostrava']);
+  const regularPool = allDestinations.filter((d) => !forcedCities.has(d.end_city));
+  const destPool = regularPool.length >= 5 ? regularPool : allDestinations;
+
+  // --- 3. Spočítej potřebný počet jízd ---
   const kmFromForced = forcedList.reduce((sum, d) => sum + d.distance_km * 2, 0);
   const remainingKm = Math.max(0, targetTotalKm - kmFromForced);
-
-  // --- 3. Odhadni potřebný počet běžných jízd ---
-  // Průměrná round-trip z destinací, ale max 200 km (preferovat kratší/střední)
-  const medianDestinations = allDestinations.filter((d) => d.distance_km <= 200);
-  const avgPool = medianDestinations.length > 0 ? medianDestinations : allDestinations;
+  // Průměr round-trip z CELÉHO poolu (reálný průměr toho co vybíráme)
   const avgRoundTrip = Math.round(
-    (avgPool.reduce((sum, d) => sum + d.distance_km, 0) / avgPool.length) * 2
+    (destPool.reduce((sum, d) => sum + d.distance_km, 0) / destPool.length) * 2
   );
   const regularTripsNeeded = Math.max(0, Math.ceil(remainingKm / avgRoundTrip));
-
   const totalTripsNeeded = forcedList.length + regularTripsNeeded;
 
-  // --- 4. Vyber pracovní dny s rozestupy (ob 1-3 dny) ---
+  // --- 4. Rozlož jízdy rovnoměrně přes celé období ---
+  // Vyber totalTripsNeeded indexů rovnoměrně rozložených přes workdays s jitterem
   const selectedDays: Date[] = [];
-  let dayIndex = 0;
-  while (selectedDays.length < totalTripsNeeded && dayIndex < workdays.length) {
-    selectedDays.push(workdays[dayIndex]);
-    const skip = randomBetween(1, 3);
-    dayIndex += 1 + skip;
-  }
-
-  // Pokud nemáme dost dní, doplň zbývající pracovní dny
-  if (selectedDays.length < totalTripsNeeded) {
-    const usedSet = new Set(selectedDays.map((d) => formatDate(d)));
-    for (const wd of workdays) {
-      if (selectedDays.length >= totalTripsNeeded) break;
-      if (!usedSet.has(formatDate(wd))) {
-        selectedDays.push(wd);
-        usedSet.add(formatDate(wd));
-      }
+  if (totalTripsNeeded >= workdays.length) {
+    // Potřebujeme víc jízd než dní – použij všechny
+    selectedDays.push(...workdays);
+  } else {
+    // Rovnoměrně rozlož: pro každou jízdu spočítej ideální pozici v poli
+    for (let t = 0; t < totalTripsNeeded; t++) {
+      const idealIndex = Math.round((t / totalTripsNeeded) * workdays.length);
+      // Přidej náhodný jitter ±1, ale drž v mezích
+      const jitter = randomBetween(-1, 1);
+      const idx = Math.max(0, Math.min(workdays.length - 1, idealIndex + jitter));
+      selectedDays.push(workdays[idx]);
     }
-    selectedDays.sort((a, b) => a.getTime() - b.getTime());
+    // Odstraň duplikáty a seřaď
+    const unique = new Map<string, Date>();
+    for (const d of selectedDays) {
+      unique.set(formatDate(d), d);
+    }
+    selectedDays.length = 0;
+    selectedDays.push(...Array.from(unique.values()).sort((a, b) => a.getTime() - b.getTime()));
   }
 
-  // --- 5. Přiřaď povinné cesty rovnoměrně ---
+  // --- 5. Přiřaď povinné cesty rovnoměrně přes vybrané dny ---
   const forcedIndices = new Map<number, Distance>();
   if (forcedList.length > 0 && selectedDays.length > 0) {
     const spacing = Math.max(1, Math.floor(selectedDays.length / (forcedList.length + 1)));
-    // Zamíchej povinné cesty, aby Praha/Brno/Ostrava nebyly za sebou
     const shuffledForced = shuffle(forcedList);
     for (let p = 0; p < shuffledForced.length; p++) {
       const idx = Math.min(spacing * (p + 1), selectedDays.length - 1);
-      // Najdi nejbližší volný index
       let finalIdx = idx;
       while (forcedIndices.has(finalIdx) && finalIdx < selectedDays.length - 1) finalIdx++;
       if (!forcedIndices.has(finalIdx)) {
@@ -329,14 +329,16 @@ export function generateTrips(
     }
   }
 
-  // --- 6. Připrav náhodné destinace bez opakování za sebou ---
-  // Vyloučit Praha/Brno/Ostrava z běžného poolu (ty jsou v povinných)
-  const forcedCities = new Set(['Praha', 'Brno', 'Ostrava']);
-  const regularPool = allDestinations.filter((d) => !forcedCities.has(d.end_city));
-  // Pokud by byl pool prázdný, použij všechny
-  const destPool = regularPool.length >= 5 ? regularPool : allDestinations;
+  // --- 6. Spočítej ideální round-trip pro běžné jízdy ---
+  const regularDays = Math.max(1, selectedDays.length - forcedList.length);
+  const idealOneWay = Math.round(remainingKm / regularDays / 2);
+  // Vyber destinace blízké ideálu (±40%), fallback na celý pool
+  const nearDest = destPool.filter(
+    (d) => d.distance_km >= idealOneWay * 0.6 && d.distance_km <= idealOneWay * 1.4
+  );
+  const preferredPool = nearDest.length >= 5 ? nearDest : destPool;
 
-  // --- 7. Generuj cesty ---
+  // --- 7. Generuj cesty na vybrané dny ---
   let lastCity = '';
   for (let i = 0; i < selectedDays.length; i++) {
     const remaining = targetTotalKm - totalKm;
@@ -348,12 +350,20 @@ export function generateTrips(
     if (forcedIndices.has(i)) {
       chosen = forcedIndices.get(i)!;
     } else {
-      // Vyber náhodně, ale ne stejný cíl jako minule
+      // Vyber z preferovaného poolu, bez opakování za sebou
       let attempts = 0;
       do {
-        chosen = destPool[randomBetween(0, destPool.length - 1)];
+        chosen = preferredPool[randomBetween(0, preferredPool.length - 1)];
         attempts++;
       } while (chosen.end_city === lastCity && attempts < 10);
+
+      // Pokud zbývá málo km, vyber kratší destinaci
+      if (remaining < chosen.distance_km * 2) {
+        const shorter = destPool.filter((d) => d.distance_km * 2 <= remaining + 10);
+        if (shorter.length > 0) {
+          chosen = shorter[randomBetween(0, shorter.length - 1)];
+        }
+      }
     }
 
     lastCity = chosen.end_city;
@@ -362,31 +372,32 @@ export function generateTrips(
     totalKm += chosen.distance_km * 2;
   }
 
-  // --- 8. Doladění: doplnit km na nevyužité dny (s rozestupy) ---
+  // --- 8. Dorovnání: pokud jsme pod cílem (> 3% odchylka), doplň jízdy ---
   if (totalKm < targetTotalKm * 0.97) {
     const usedDays = new Set(trips.map((t) => t.start_date.slice(0, 10)));
+    // Najdi nevyužité pracovní dny ROVNOMĚRNĚ mezi posledními jízdami
     const unusedWorkdays = workdays.filter((d) => !usedDays.has(formatDate(d)));
-
-    let unusedIdx = 0;
-    while (unusedIdx < unusedWorkdays.length) {
-      const remaining = targetTotalKm - totalKm;
-      if (remaining <= 5 || totalKm >= targetTotalKm * 0.97) break;
-
-      const day = unusedWorkdays[unusedIdx];
+    const deficit = targetTotalKm - totalKm;
+    const shortPool = destPool.filter((d) => d.distance_km * 2 <= deficit + 10);
+    const fillPool = shortPool.length >= 3 ? shortPool : destPool;
+    // Vyber dny rovnoměrně z nevyužitých
+    const fillNeeded = Math.max(1, Math.ceil(deficit / avgRoundTrip));
+    const fillSpacing = Math.max(1, Math.floor(unusedWorkdays.length / (fillNeeded + 1)));
+    for (let f = 0; f < fillNeeded && f * fillSpacing < unusedWorkdays.length; f++) {
+      const rem = targetTotalKm - totalKm;
+      if (rem <= 5) break;
+      const day = unusedWorkdays[Math.min(f * fillSpacing, unusedWorkdays.length - 1)];
       let chosen: Distance;
-      let attempts = 0;
+      const shorter = fillPool.filter((d) => d.distance_km * 2 <= rem + 10);
+      const pool = shorter.length >= 3 ? shorter : fillPool;
+      let att = 0;
       do {
-        chosen = destPool[randomBetween(0, destPool.length - 1)];
-        attempts++;
-      } while (chosen.end_city === lastCity && attempts < 10);
-
+        chosen = pool[randomBetween(0, pool.length - 1)];
+        att++;
+      } while (chosen.end_city === lastCity && att < 10);
       lastCity = chosen.end_city;
-      const tripPair = createTripPair(vehicleId, driverName, day, chosen);
-      trips.push(...tripPair);
+      trips.push(...createTripPair(vehicleId, driverName, day, chosen));
       totalKm += chosen.distance_km * 2;
-
-      const skip = randomBetween(1, 2);
-      unusedIdx += 1 + skip;
     }
   }
 
