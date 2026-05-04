@@ -33,10 +33,14 @@ export function GeneratorPage() {
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [dateFromLocked, setDateFromLocked] = useState(false);
 
-  // Filter only active vehicles
-  const activeVehicles = vehicles.filter((v) => {
-    return !v.disposal_date || new Date(v.disposal_date) > new Date();
-  });
+  // When vehicle changes, set dateTo to disposal_date if vehicle is disposed
+  useEffect(() => {
+    if (!newRequest.vehicleId) return;
+    const vehicle = vehicles.find((v) => v.id === newRequest.vehicleId);
+    if (vehicle?.disposal_date) {
+      setNewRequest((prev) => ({ ...prev, dateTo: vehicle.disposal_date!.slice(0, 10) }));
+    }
+  }, [newRequest.vehicleId, vehicles]);
 
   // When vehicle changes, calculate date_from
   useEffect(() => {
@@ -110,6 +114,16 @@ export function GeneratorPage() {
 
     if (new Date(newRequest.dateTo) <= new Date(newRequest.dateFrom)) {
       setGenerationError('Datum do musí být po datu od');
+      return;
+    }
+
+    // Validace období pořízení–vyřazení
+    if (new Date(newRequest.dateFrom) < new Date(vehicle.acquisition_date)) {
+      setGenerationError(`Datum od nesmí být před datem pořízení vozidla (${vehicle.acquisition_date})`);
+      return;
+    }
+    if (vehicle.disposal_date && new Date(newRequest.dateTo) > new Date(vehicle.disposal_date)) {
+      setGenerationError(`Datum do nesmí být po datu vyřazení vozidla (${vehicle.disposal_date.slice(0, 10)})`);
       return;
     }
 
@@ -229,9 +243,14 @@ export function GeneratorPage() {
                 className="w-full bg-slate-800/50 border border-slate-600 rounded-xl py-3 px-4 text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
               >
                 <option value="">Vyberte vozidlo</option>
-                {activeVehicles.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {getVehicleLabel(v)}
+                {[...vehicles].sort((a, b) => {
+                  const aDisposed = !!a.disposal_date;
+                  const bDisposed = !!b.disposal_date;
+                  if (aDisposed !== bDisposed) return aDisposed ? 1 : -1;
+                  return a.spz.localeCompare(b.spz);
+                }).map((v) => (
+                  <option key={v.id} value={v.id} style={v.disposal_date ? { color: '#f97316' } : {}}>
+                    {getVehicleLabel(v)}{v.disposal_date ? ' ⚠ vyřazeno' : ''}
                   </option>
                 ))}
               </select>
@@ -265,6 +284,8 @@ export function GeneratorPage() {
                 type="date"
                 value={newRequest.dateTo}
                 onChange={(e) => setNewRequest((prev) => ({ ...prev, dateTo: e.target.value }))}
+                min={newRequest.dateFrom || undefined}
+                max={selectedVehicle?.disposal_date?.slice(0, 10) || undefined}
                 className="w-full bg-slate-800/50 border border-slate-600 rounded-xl py-3 px-4 text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
               />
             </div>

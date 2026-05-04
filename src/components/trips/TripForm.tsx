@@ -41,7 +41,7 @@ export function TripForm({
   const [error, setError] = useState<string | null>(null);
   const [createReturnTrip, setCreateReturnTrip] = useState(!trip); // Defaultně zaškrtnuto pro nové jízdy
 
-  // Filter active vehicles based on start date
+  // Determine active vehicles based on start date (for validation hints)
   useEffect(() => {
     if (formData.start_date) {
       const checkDate = new Date(formData.start_date.slice(0, 10));
@@ -51,15 +51,18 @@ export function TripForm({
         return checkDate >= acquisitionDate && (!disposalDate || checkDate <= disposalDate);
       });
       setActiveVehicles(filtered);
-
-      // Reset vehicle if not in active list
-      if (formData.vehicle_id && !filtered.find((v) => v.id === formData.vehicle_id)) {
-        setFormData((prev) => ({ ...prev, vehicle_id: '' }));
-      }
     } else {
       setActiveVehicles(vehicles);
     }
-  }, [formData.start_date, vehicles, formData.vehicle_id]);
+  }, [formData.start_date, vehicles]);
+
+  // Sort vehicles: active first, disposed last
+  const sortedVehicles = [...vehicles].sort((a, b) => {
+    const aDisposed = !!a.disposal_date;
+    const bDisposed = !!b.disposal_date;
+    if (aDisposed !== bDisposed) return aDisposed ? 1 : -1;
+    return a.spz.localeCompare(b.spz);
+  });
 
   // Calculate distance when locations change
   useEffect(() => {
@@ -185,11 +188,14 @@ export function TripForm({
               required
             >
               <option value="">Vyberte vozidlo</option>
-              {activeVehicles.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name} ({v.spz})
-                </option>
-              ))}
+              {sortedVehicles.map((v) => {
+                const isActive = activeVehicles.some((av) => av.id === v.id);
+                return (
+                  <option key={v.id} value={v.id} style={v.disposal_date ? { color: '#f97316' } : {}}>
+                    {v.spz} – {v.name}{v.disposal_date ? ' ⚠ vyřazeno' : ''}{!isActive && !v.disposal_date ? ' (mimo období)' : ''}
+                  </option>
+                );
+              })}
             </select>
             {formData.vehicle_id && (
               <p className="text-xs text-slate-400">
