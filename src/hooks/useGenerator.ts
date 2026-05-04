@@ -63,17 +63,17 @@ export function useGenerator() {
 
   const getLastDateForVehicle = useCallback(async (vehicleId: string): Promise<string | null> => {
     try {
-      // Číst z cache sloupce last_trip_date na vehicles
+      // 1. Číst last_trip_date z vehicles cache
       const { data: vehicle } = await supabase
         .from('vehicles')
         .select('last_trip_date')
         .eq('id', vehicleId)
         .single();
 
-      let lastDate = vehicle?.last_trip_date || null;
+      let lastTripDate = vehicle?.last_trip_date?.slice(0, 10) || null;
 
       // Fallback: pokud cache je prázdný, dotáži přímo poslední jízdu
-      if (!lastDate) {
+      if (!lastTripDate) {
         const { data: lastTrip } = await supabase
           .from('trips')
           .select('end_date')
@@ -82,12 +82,32 @@ export function useGenerator() {
           .limit(1)
           .maybeSingle();
 
-        lastDate = lastTrip?.end_date || null;
+        lastTripDate = lastTrip?.end_date?.slice(0, 10) || null;
+      }
+
+      // 2. Číst date_to z posledního dokončeného generator requestu
+      const { data: lastRequest } = await supabase
+        .from('generator_requests')
+        .select('date_to')
+        .eq('vehicle_id', vehicleId)
+        .eq('status', 'completed')
+        .order('date_to', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const lastRequestDate = lastRequest?.date_to?.slice(0, 10) || null;
+
+      // 3. Vezmi pozdější z obou datumů
+      let lastDate: string | null = null;
+      if (lastTripDate && lastRequestDate) {
+        lastDate = lastTripDate > lastRequestDate ? lastTripDate : lastRequestDate;
+      } else {
+        lastDate = lastTripDate || lastRequestDate;
       }
 
       if (!lastDate) return null;
 
-      // Return date as YYYY-MM-DD (next day after last trip)
+      // Return date as YYYY-MM-DD (next day after last date)
       const latest = new Date(lastDate);
       const nextDay = new Date(latest);
       nextDay.setDate(nextDay.getDate() + 1);
