@@ -348,6 +348,9 @@ export function generateTrips(
 
   // --- 6+7. Generuj cesty na vybrané dny s dynamickým výběrem vzdálenosti ---
   let lastCity = '';
+  // Předpočítej zbývající forced indexy pro rychlý lookup
+  const forcedKeySet = new Set(forcedIndices.keys());
+
   for (let i = 0; i < selectedDays.length; i++) {
     const remaining = targetTotalKm - totalKm;
     if (remaining <= 5) break;
@@ -359,16 +362,29 @@ export function generateTrips(
       chosen = forcedIndices.get(i)!;
     } else {
       // Dynamicky spočítej ideální jednosměrnou vzdálenost ze zbývajících km a dní
-      const remainingRegularDays = Math.max(1,
-        selectedDays.length - i - [...forcedIndices.keys()].filter(k => k > i).length
-      );
+      let remainingForcedAfter = 0;
+      for (const k of forcedKeySet) {
+        if (k > i) remainingForcedAfter++;
+      }
+      const remainingRegularDays = Math.max(1, selectedDays.length - i - remainingForcedAfter);
       const dynamicIdealOneWay = Math.round(remaining / remainingRegularDays / 2);
 
-      // Vyber destinace blízké dynamickému ideálu (±40%), fallback na celý pool
+      // Vyber destinace blízké dynamickému ideálu (±40%)
       const nearDest = destPool.filter(
         (d) => d.distance_km >= dynamicIdealOneWay * 0.6 && d.distance_km <= dynamicIdealOneWay * 1.4
       );
-      const currentPool = nearDest.length >= 3 ? nearDest : destPool;
+
+      // Fallback: pokud nearDest nemá dost výsledků, seřaď celý pool podle
+      // blízkosti k ideálu a vezmi top 10 nejbližších (ne celý pool se vzdálenými okraji)
+      let currentPool: Distance[];
+      if (nearDest.length >= 3) {
+        currentPool = nearDest;
+      } else {
+        const sorted = [...destPool].sort(
+          (a, b) => Math.abs(a.distance_km - dynamicIdealOneWay) - Math.abs(b.distance_km - dynamicIdealOneWay)
+        );
+        currentPool = sorted.slice(0, Math.max(10, Math.min(sorted.length, 20)));
+      }
 
       // Vyber z poolu, bez opakování za sebou
       let attempts = 0;
