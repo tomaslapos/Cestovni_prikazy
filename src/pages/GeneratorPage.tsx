@@ -25,22 +25,13 @@ export function GeneratorPage() {
   const [newRequest, setNewRequest] = useState<NewRequest>({
     vehicleId: '',
     dateFrom: '',
-    dateTo: format(new Date(), 'yyyy-MM-dd'),
+    dateTo: '',
     targetOdometer: '',
   });
   const [showConfirm, setShowConfirm] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [dateFromLocked, setDateFromLocked] = useState(false);
-
-  // When vehicle changes, set dateTo to disposal_date if vehicle is disposed
-  useEffect(() => {
-    if (!newRequest.vehicleId) return;
-    const vehicle = vehicles.find((v) => v.id === newRequest.vehicleId);
-    if (vehicle?.disposal_date) {
-      setNewRequest((prev) => ({ ...prev, dateTo: vehicle.disposal_date!.slice(0, 10) }));
-    }
-  }, [newRequest.vehicleId, vehicles]);
 
   // When vehicle changes, calculate date_from
   useEffect(() => {
@@ -75,7 +66,7 @@ export function GeneratorPage() {
     setNewRequest({
       vehicleId: '',
       dateFrom: '',
-      dateTo: format(new Date(), 'yyyy-MM-dd'),
+      dateTo: '',
       targetOdometer: '',
     });
     setShowConfirm(false);
@@ -194,7 +185,7 @@ export function GeneratorPage() {
       setNewRequest({
         vehicleId: '',
         dateFrom: '',
-        dateTo: format(new Date(), 'yyyy-MM-dd'),
+        dateTo: '',
         targetOdometer: '',
       });
 
