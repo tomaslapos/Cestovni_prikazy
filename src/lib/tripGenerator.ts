@@ -359,7 +359,12 @@ export function generateTrips(
     let chosen: Distance;
 
     if (forcedIndices.has(i)) {
-      chosen = forcedIndices.get(i)!;
+      const forcedDest = forcedIndices.get(i)!;
+      // Přeskočit forced trip pokud by přesáhl cíl o víc než 3%
+      if (totalKm + forcedDest.distance_km * 2 > targetTotalKm * 1.03) {
+        continue;
+      }
+      chosen = forcedDest;
     } else {
       // Dynamicky spočítej ideální jednosměrnou vzdálenost ze zbývajících km a dní
       let remainingForcedAfter = 0;
@@ -408,28 +413,53 @@ export function generateTrips(
     totalKm += chosen.distance_km * 2;
   }
 
-  // --- 8. Dorovnání: pokud jsme pod cílem (> 3% odchylka), doplň jízdy ---
-  if (totalKm < targetTotalKm * 0.97) {
+  // --- 8. Dorovnání: pokud jsme pod cílem (> 1% odchylka), doplň jízdy ---
+  if (totalKm < targetTotalKm * 0.99) {
     const usedDays = new Set(trips.map((t) => t.start_date.slice(0, 10)));
     const unusedWorkdays = workdays.filter((d) => !usedDays.has(formatDate(d)));
     const deficit = targetTotalKm - totalKm;
-    const fillNeeded = Math.max(1, Math.ceil(deficit / avgRoundTrip));
-    for (let f = 0; f < fillNeeded && f < unusedWorkdays.length; f++) {
-      const rem = targetTotalKm - totalKm;
-      if (rem <= 5) break;
-      const fIdx = Math.min(Math.round((f / fillNeeded) * unusedWorkdays.length), unusedWorkdays.length - 1);
-      const day = unusedWorkdays[fIdx];
-      const shorter = destPool.filter((d) => d.distance_km * 2 <= rem + 10);
-      const pool = shorter.length >= 3 ? shorter : destPool;
-      let chosen: Distance;
-      let att = 0;
-      do {
-        chosen = pool[randomBetween(0, pool.length - 1)];
-        att++;
-      } while (chosen.end_city === lastCity && att < 10);
-      lastCity = chosen.end_city;
-      trips.push(...createTripPair(vehicleId, driverName, day, chosen));
-      totalKm += chosen.distance_km * 2;
+
+    // Pokud jsou volné dny, doplň na ně
+    if (unusedWorkdays.length > 0) {
+      const fillNeeded = Math.max(1, Math.ceil(deficit / avgRoundTrip));
+      for (let f = 0; f < fillNeeded && f < unusedWorkdays.length; f++) {
+        const rem = targetTotalKm - totalKm;
+        if (rem <= targetTotalKm * 0.01) break; // už jsme v toleranci 1%
+        const fIdx = Math.min(Math.round((f / fillNeeded) * unusedWorkdays.length), unusedWorkdays.length - 1);
+        const day = unusedWorkdays[fIdx];
+        // Vyber destinaci nejblíže zbývajícímu deficitu (rem / zbývající fill jízdy)
+        const idealFillOneWay = Math.round(rem / Math.max(1, fillNeeded - f) / 2);
+        const nearFill = destPool.filter((d) => d.distance_km >= idealFillOneWay * 0.6 && d.distance_km <= idealFillOneWay * 1.4);
+        const pool = nearFill.length >= 3 ? nearFill : destPool.filter((d) => d.distance_km * 2 <= rem + 10);
+        const finalPool = pool.length >= 1 ? pool : destPool;
+        let chosen: Distance;
+        let att = 0;
+        do {
+          chosen = finalPool[randomBetween(0, finalPool.length - 1)];
+          att++;
+        } while (chosen.end_city === lastCity && att < 10);
+        lastCity = chosen.end_city;
+        trips.push(...createTripPair(vehicleId, driverName, day, chosen));
+        totalKm += chosen.distance_km * 2;
+      }
+    }
+
+    // Pokud stále pod cílem a nejsou volné dny, přidej druhou jízdu na existující den
+    if (totalKm < targetTotalKm * 0.99) {
+      const remainingDeficit = targetTotalKm - totalKm;
+      if (remainingDeficit > 20) {
+        // Najdi destinaci nejbližší deficitu/2 (jednosměrně)
+        const idealOneWay = Math.round(remainingDeficit / 2);
+        const closest = [...destPool].sort(
+          (a, b) => Math.abs(a.distance_km - idealOneWay) - Math.abs(b.distance_km - idealOneWay)
+        );
+        const chosen = closest[randomBetween(0, Math.min(2, closest.length - 1))];
+        // Přidej na náhodný den z již použitých
+        const usedDaysList = [...usedDays];
+        const randomDay = new Date(usedDaysList[randomBetween(0, usedDaysList.length - 1)]);
+        trips.push(...createTripPair(vehicleId, driverName, randomDay, chosen));
+        totalKm += chosen.distance_km * 2;
+      }
     }
   }
 
