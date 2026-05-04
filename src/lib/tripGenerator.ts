@@ -234,9 +234,15 @@ export function generateTrips(
     return { trips: [], totalGeneratedKm: 0 };
   }
 
-  // Destinace z Ústí nad Labem (15–400 km jednosměrně)
+  // Spočítej ideální jednosměrnou vzdálenost z cílového nájezdu a pracovních dní
+  const approxWorkdays = workdays.length || 1;
+  const idealOneWayApprox = Math.round(targetKm / approxWorkdays / 2);
+  // Horní limit: max z 400 km a 2× ideální vzdálenost (pro vysoký nájezd)
+  const maxOneWay = Math.max(400, idealOneWayApprox * 2);
+
+  // Destinace z Ústí nad Labem (15 km – dynamický max)
   const allDestinations = distances.filter(
-    (d) => d.start_city === 'Ústí nad Labem' && d.distance_km >= 15 && d.distance_km <= 400
+    (d) => d.start_city === 'Ústí nad Labem' && d.distance_km >= 15 && d.distance_km <= maxOneWay
   );
 
   if (allDestinations.length === 0) {
@@ -386,21 +392,17 @@ export function generateTrips(
   // --- 8. Dorovnání: pokud jsme pod cílem (> 3% odchylka), doplň jízdy ---
   if (totalKm < targetTotalKm * 0.97) {
     const usedDays = new Set(trips.map((t) => t.start_date.slice(0, 10)));
-    // Najdi nevyužité pracovní dny ROVNOMĚRNĚ mezi posledními jízdami
     const unusedWorkdays = workdays.filter((d) => !usedDays.has(formatDate(d)));
     const deficit = targetTotalKm - totalKm;
-    const shortPool = destPool.filter((d) => d.distance_km * 2 <= deficit + 10);
-    const fillPool = shortPool.length >= 3 ? shortPool : destPool;
-    // Vyber dny rovnoměrně z nevyužitých
     const fillNeeded = Math.max(1, Math.ceil(deficit / avgRoundTrip));
-    const fillSpacing = Math.max(1, Math.floor(unusedWorkdays.length / (fillNeeded + 1)));
-    for (let f = 0; f < fillNeeded && f * fillSpacing < unusedWorkdays.length; f++) {
+    for (let f = 0; f < fillNeeded && f < unusedWorkdays.length; f++) {
       const rem = targetTotalKm - totalKm;
       if (rem <= 5) break;
-      const day = unusedWorkdays[Math.min(f * fillSpacing, unusedWorkdays.length - 1)];
+      const fIdx = Math.min(Math.round((f / fillNeeded) * unusedWorkdays.length), unusedWorkdays.length - 1);
+      const day = unusedWorkdays[fIdx];
+      const shorter = destPool.filter((d) => d.distance_km * 2 <= rem + 10);
+      const pool = shorter.length >= 3 ? shorter : destPool;
       let chosen: Distance;
-      const shorter = fillPool.filter((d) => d.distance_km * 2 <= rem + 10);
-      const pool = shorter.length >= 3 ? shorter : fillPool;
       let att = 0;
       do {
         chosen = pool[randomBetween(0, pool.length - 1)];
